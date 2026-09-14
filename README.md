@@ -1,2 +1,2 @@
-# community_partner_app
+# College_Companion
 Sean, Arielle, and Lily's senior project repository 
