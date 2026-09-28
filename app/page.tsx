@@ -23,6 +23,16 @@ type ChatMessage = {
   citations?: Citation[];
 };
 
+type StreamCitation = {
+  type?: string;
+  url_citation?: { url?: string; title?: string };
+};
+
+type StreamChunk = {
+  choices?: { delta?: { content?: string; annotations?: StreamCitation[] } }[];
+  error?: { message?: string };
+};
+
 const initialChatMessages: ChatMessage[] = [
   {
     sender: "bot",
@@ -50,8 +60,20 @@ export default function Home() {
 
     setChatInput("");
     setChatError("");
-    setChatMessages((current) => [...current, { sender: "user", text: prompt }]);
+    setChatMessages((current) => [...current, { sender: "user", text: prompt }, { sender: "bot", text: "" }]);
     setIsSending(true);
+
+    const updateLatestBotMessage = (update: (message: ChatMessage) => ChatMessage) => {
+      setChatMessages((current) => {
+        const latestIndex = current.length - 1;
+
+        if (latestIndex < 0 || current[latestIndex].sender !== "bot") {
+          return current;
+        }
+
+        return current.map((chatMessage, index) => (index === latestIndex ? update(chatMessage) : chatMessage));
+      });
+    };
 
     try {
       const response = await fetch("/api/ai-helper", {
@@ -59,16 +81,99 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: prompt }),
       });
-      const data = (await response.json()) as { answer?: string; citations?: Citation[]; error?: string };
 
       if (!response.ok) {
+        const data = (await response.json()) as { error?: string };
         throw new Error(data.error ?? "The AI helper could not respond.");
       }
 
-      setChatMessages((current) => [
-        ...current,
-        { sender: "bot", text: data.answer ?? "I could not find an answer.", citations: data.citations },
-      ]);
+      if (!response.body) {
+        throw new Error("The AI helper did not return a readable response stream.");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      const citations: Citation[] = [];
+      const citationUris = new Set<string>();
+      let buffer = "";
+      let eventData: string[] = [];
+      let streamError = "";
+
+      const processEvent = () => {
+        const data = eventData.join("\n");
+        eventData = [];
+
+        if (!data || data === "[DONE]") {
+          return;
+        }
+
+        try {
+          const chunk = JSON.parse(data) as StreamChunk;
+
+          if (chunk.error?.message) {
+            streamError = chunk.error.message;
+            return;
+          }
+
+          const choice = chunk.choices?.[0];
+          const content = choice?.delta?.content;
+
+          if (content) {
+            updateLatestBotMessage((chatMessage) => ({ ...chatMessage, text: chatMessage.text + content }));
+          }
+
+          for (const annotation of choice?.delta?.annotations ?? []) {
+            const uri = annotation.url_citation?.url;
+
+            if (annotation.type === "url_citation" && uri && /^https?:\/\//i.test(uri) && !citationUris.has(uri)) {
+              citationUris.add(uri);
+              citations.push({ title: annotation.url_citation?.title || uri, uri });
+            }
+          }
+        } catch {
+          return;
+        }
+      };
+
+      const processLine = (line: string) => {
+        const normalizedLine = line.endsWith("\r") ? line.slice(0, -1) : line;
+
+        if (!normalizedLine) {
+          processEvent();
+        } else if (normalizedLine.startsWith("data:")) {
+          eventData.push(normalizedLine.slice(5).replace(/^ /, ""));
+        }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        buffer += decoder.decode(value, { stream: !done });
+
+        let lineEnd = buffer.indexOf("\n");
+        while (lineEnd !== -1) {
+          processLine(buffer.slice(0, lineEnd));
+          buffer = buffer.slice(lineEnd + 1);
+          lineEnd = buffer.indexOf("\n");
+        }
+
+        if (done) {
+          if (buffer) {
+            processLine(buffer);
+          }
+          processLine("");
+          break;
+        }
+      }
+
+      if (streamError) {
+        throw new Error(streamError);
+      }
+
+      updateLatestBotMessage((chatMessage) => ({
+        ...chatMessage,
+        text: chatMessage.text || "I could not find an answer.",
+        citations,
+      }));
     } catch (error) {
       setChatError(error instanceof Error ? error.message : "The AI helper could not respond.");
     } finally {
@@ -179,7 +284,11 @@ export default function Home() {
                   >
                     {message.sender === "bot" ? (
                       <div className="chat-markdown">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
+                        {message.text ? (
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
+                        ) : isSending && index === chatMessages.length - 1 ? (
+                          <span className="animate-pulse">Thinking...</span>
+                        ) : null}
                       </div>
                     ) : (
                       message.text

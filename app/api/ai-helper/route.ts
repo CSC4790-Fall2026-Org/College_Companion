@@ -1,13 +1,12 @@
-import Groq from "groq-sdk";
-
-const GROQ_MODEL = "openai/gpt-oss-120b";
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const DEFAULT_MODEL = "openai/gpt-4o-mini";
 
 export async function POST(request: Request) {
-  const apiKey = process.env.GROQ_API_KEY;
+  const apiKey = process.env.OPENROUTER_API_KEY;
 
   if (!apiKey) {
     return Response.json(
-      { error: "Groq is not configured. Add GROQ_API_KEY to your environment." },
+      { error: "OpenRouter is not configured. Add OPENROUTER_API_KEY to your environment." },
       { status: 503 },
     );
   }
@@ -35,51 +34,58 @@ export async function POST(request: Request) {
   );
 
   try {
-    const groq = new Groq({ apiKey });
-    const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are College Advisor, a practical and careful college planning assistant. Use Browser Search for current information. Prefer official college, university, government, and application-system websites. Clearly say when information may change, and never invent deadlines, requirements, costs, or policies. Keep answers concise and include useful source context.",
-        },
-        { role: "user", content: message },
-      ],
-      ...(isCasualMessage ? {} : { tools: [{ type: "browser_search" as const }] }),
-      max_completion_tokens: 700,
+    const completionResponse = await fetch(OPENROUTER_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "X-Title": "College Advisor",
+      },
+      body: JSON.stringify({
+        model: process.env.OPENROUTER_MODEL || DEFAULT_MODEL,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are College Advisor, a practical and careful college planning assistant. For questions needing current information, use the provided web search results and prefer official college, university, government, and application-system websites. Clearly say when information may change, and never invent deadlines, requirements, costs, or policies. Keep answers concise and cite useful sources.",
+          },
+          { role: "user", content: message },
+        ],
+        ...(isCasualMessage ? {} : { plugins: [{ id: "web" }] }),
+        max_tokens: 700,
+        stream: true,
+      }),
+      cache: "no-store",
     });
 
-    const responseMessage = completion.choices[0]?.message;
-    const answer = responseMessage?.content?.trim();
+    if (!completionResponse.ok) {
+      if (completionResponse.status === 429) {
+        return Response.json(
+          { error: "OpenRouter rate limits were reached. Wait a moment and try again." },
+          { status: 429 },
+        );
+      }
 
-    if (!answer) {
-      return Response.json({ error: "Groq returned an empty answer. Try asking another way." }, { status: 502 });
+      const completion = (await completionResponse.json().catch(() => null)) as {
+        error?: { message?: string };
+      } | null;
+      console.error("OpenRouter request failed:", completion?.error?.message ?? completionResponse.statusText);
+      return Response.json({ error: "OpenRouter could not complete the request. Check your API configuration and try again." }, { status: 502 });
     }
 
-    const citations = (responseMessage?.executed_tools ?? [])
-      .flatMap((tool) => tool.browser_results ?? [])
-      .filter((source) => Boolean(source.url))
-      .map((source) => ({ title: source.title || source.url, uri: source.url }));
+    if (!completionResponse.body) {
+      return Response.json({ error: "OpenRouter did not return a response stream." }, { status: 502 });
+    }
 
-    return Response.json({ answer, citations });
+    return new Response(completionResponse.body, {
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "X-Accel-Buffering": "no",
+      },
+    });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "";
-    const errorStatus =
-      typeof error === "object" && error !== null && "status" in error && typeof error.status === "number"
-        ? error.status
-        : undefined;
-
-    if (errorStatus === 429 || /quota|rate limit|too many requests/i.test(errorMessage)) {
-      return Response.json(
-        { error: "Groq rate limits were reached. Wait a moment and try again." },
-        { status: 429 },
-      );
-    }
-
-    return Response.json(
-      { error: errorMessage || "The AI helper is unavailable. Please try again shortly." },
-      { status: 502 },
-    );
+    console.error("OpenRouter request error:", error);
+    return Response.json({ error: "The AI helper is unavailable. Please try again shortly." }, { status: 502 });
   }
 }
