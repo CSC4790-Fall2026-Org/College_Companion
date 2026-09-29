@@ -36,6 +36,13 @@ type Deadline = {
   date: string;
 };
 
+type DeadlineView = "list" | "calendar";
+
+const calendarWeekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const getDateKey = (year: number, month: number, day: number) =>
+  `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
 const defaultDeadlines: Deadline[] = [
   { id: 1, title: "Common App essay review", date: "2026-09-20" },
   { id: 2, title: "Scholarship application", date: "2026-09-24" },
@@ -81,6 +88,11 @@ export default function Home() {
   });
   const [deadlineTitle, setDeadlineTitle] = useState("");
   const [deadlineDate, setDeadlineDate] = useState("");
+  const [deadlineView, setDeadlineView] = useState<DeadlineView>("list");
+  const [calendarDate, setCalendarDate] = useState(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
 
   useEffect(() => {
     window.localStorage.setItem("college-advisor-deadlines", JSON.stringify(deadlines));
@@ -110,6 +122,10 @@ export default function Home() {
     setDeadlines((current) => [...current, { id: Date.now(), title, date: deadlineDate }].sort((a, b) => a.date.localeCompare(b.date)));
     setDeadlineTitle("");
     setDeadlineDate("");
+  };
+
+  const shiftCalendarMonth = (offset: number) => {
+    setCalendarDate((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
   };
 
   const sendMessage = async (message?: string) => {
@@ -248,6 +264,15 @@ export default function Home() {
   };
 
   const renderContent = () => {
+    const calendarYear = calendarDate.getFullYear();
+    const calendarMonth = calendarDate.getMonth();
+    const calendarDaysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+    const calendarStartOffset = new Date(calendarYear, calendarMonth, 1).getDay();
+    const calendarCells = Array.from(
+      { length: calendarStartOffset + calendarDaysInMonth },
+      (_, index) => (index < calendarStartOffset ? null : index - calendarStartOffset + 1),
+    );
+
     if (activeTab === "Home") {
       return (
         <section className="fade-in-up mt-8">
@@ -582,6 +607,21 @@ export default function Home() {
           <p className="text-sm text-slate-600">{deadlines.length} {deadlines.length === 1 ? "deadline" : "deadlines"}</p>
         </div>
 
+        <div className="mt-5 inline-flex rounded-xl bg-white/80 p-1 ring-1 ring-slate-200">
+          {(["list", "calendar"] as const).map((view) => (
+            <button
+              key={view}
+              type="button"
+              onClick={() => setDeadlineView(view)}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition ${
+                deadlineView === view ? "bg-slate-900 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              {view}
+            </button>
+          ))}
+        </div>
+
         <form onSubmit={handleAddDeadline} className="mt-6 grid gap-3 rounded-2xl bg-white/80 p-4 ring-1 ring-slate-200 md:grid-cols-[1fr_auto_auto] md:items-end">
           <label className="text-sm font-semibold text-slate-700">
             What is due?
@@ -594,25 +634,64 @@ export default function Home() {
           <button type="submit" className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700">Add deadline</button>
         </form>
 
-        <div className="mt-6 space-y-3">
-          {deadlines.map((deadline, index) => (
-            <div
-              key={deadline.id}
-              className={`flex items-center justify-between rounded-2xl px-4 py-3 shadow-sm ring-1 ${
-                index % 2 === 0
-                  ? "bg-gradient-to-r from-rose-100 to-orange-50 ring-rose-200"
-                  : "bg-gradient-to-r from-sky-100 to-violet-50 ring-sky-200"
-              }`}
-            >
-              <span className="text-slate-700">{deadline.title}</span>
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-slate-900 px-2 py-1 text-xs font-bold text-white">{formatDeadlineDate(deadline.date)}</span>
-                <button type="button" onClick={() => setDeadlines((current) => current.filter((item) => item.id !== deadline.id))} className="rounded-full px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-white hover:text-rose-600" aria-label={`Remove ${deadline.title}`}>Remove</button>
+        {deadlineView === "list" ? (
+          <div className="mt-6 space-y-3">
+            {deadlines.map((deadline, index) => (
+              <div
+                key={deadline.id}
+                className={`flex items-center justify-between rounded-2xl px-4 py-3 shadow-sm ring-1 ${
+                  index % 2 === 0
+                    ? "bg-gradient-to-r from-rose-100 to-orange-50 ring-rose-200"
+                    : "bg-gradient-to-r from-sky-100 to-violet-50 ring-sky-200"
+                }`}
+              >
+                <span className="text-slate-700">{deadline.title}</span>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-slate-900 px-2 py-1 text-xs font-bold text-white">{formatDeadlineDate(deadline.date)}</span>
+                  <button type="button" onClick={() => setDeadlines((current) => current.filter((item) => item.id !== deadline.id))} className="rounded-full px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-white hover:text-rose-600" aria-label={`Remove ${deadline.title}`}>Remove</button>
+                </div>
               </div>
+            ))}
+            {deadlines.length === 0 && <p className="rounded-2xl bg-white/70 px-4 py-6 text-center text-sm text-slate-500">No deadlines yet. Add one above to get started.</p>}
+          </div>
+        ) : (
+          <div className="mt-6 rounded-2xl bg-white/75 p-4 ring-1 ring-slate-200">
+            <div className="mb-4 flex items-center justify-between">
+              <button type="button" onClick={() => shiftCalendarMonth(-1)} className="rounded-lg px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100" aria-label="Previous month">&lt;</button>
+              <h3 className="text-lg font-black text-slate-900">
+                {new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(calendarDate)}
+              </h3>
+              <button type="button" onClick={() => shiftCalendarMonth(1)} className="rounded-lg px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100" aria-label="Next month">&gt;</button>
             </div>
-          ))}
-          {deadlines.length === 0 && <p className="rounded-2xl bg-white/70 px-4 py-6 text-center text-sm text-slate-500">No deadlines yet. Add one above to get started.</p>}
-        </div>
+
+            <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold uppercase tracking-wide text-slate-400">
+              {calendarWeekdays.map((weekday) => <span key={weekday} className="py-2">{weekday}</span>)}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {calendarCells.map((day, index) => {
+                const dateKey = day === null ? "" : getDateKey(calendarYear, calendarMonth, day);
+                const dayDeadlines = deadlines.filter((deadline) => deadline.date === dateKey);
+
+                return (
+                  <div key={day === null ? `empty-${index}` : dateKey} className={`min-h-24 rounded-xl p-2 text-left ring-1 ${day === null ? "bg-slate-50/60 ring-transparent" : "bg-white ring-slate-200"}`}>
+                    {day !== null && (
+                      <>
+                        <span className="text-sm font-bold text-slate-700">{day}</span>
+                        <div className="mt-1 space-y-1">
+                          {dayDeadlines.map((deadline) => (
+                            <div key={deadline.id} className="rounded-md bg-gradient-to-r from-rose-400 to-violet-500 px-1.5 py-1 text-[10px] font-bold leading-tight text-white" title={deadline.title}>
+                              {deadline.title}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </section>
     );
   };
