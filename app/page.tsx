@@ -1,11 +1,9 @@
 "use client";
-
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 const tabs = ["Home", "College Chat", "Resources", "Deadlines", "Visualizations"] as const;
-
 type Tab = (typeof tabs)[number];
 
 const quickPrompts = [
@@ -16,7 +14,6 @@ const quickPrompts = [
 ];
 
 type Citation = { title: string; uri: string };
-
 type ChatMessage = {
   sender: "bot" | "user";
   text: string;
@@ -32,6 +29,19 @@ type StreamChunk = {
   choices?: { delta?: { content?: string; annotations?: StreamCitation[] } }[];
   error?: { message?: string };
 };
+
+type Deadline = {
+  id: number;
+  title: string;
+  date: string;
+};
+
+const defaultDeadlines: Deadline[] = [
+  { id: 1, title: "Common App essay review", date: "2026-09-20" },
+  { id: 2, title: "Scholarship application", date: "2026-09-24" },
+  { id: 3, title: "Teacher recommendation follow-up", date: "2026-09-27" },
+  { id: 4, title: "Financial aid form review", date: "2026-10-01" },
+];
 
 const initialChatMessages: ChatMessage[] = [
   {
@@ -50,6 +60,57 @@ export default function Home() {
   const [chatInput, setChatInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [chatError, setChatError] = useState("");
+  const [deadlines, setDeadlines] = useState<Deadline[]>(() => {
+    if (typeof window === "undefined") {
+      return defaultDeadlines;
+    }
+
+    const savedDeadlines = window.localStorage.getItem("college-advisor-deadlines");
+
+    if (!savedDeadlines) {
+      return defaultDeadlines;
+    }
+
+    try {
+      const parsedDeadlines = JSON.parse(savedDeadlines) as Deadline[];
+      return Array.isArray(parsedDeadlines) ? parsedDeadlines : defaultDeadlines;
+    } catch {
+      window.localStorage.removeItem("college-advisor-deadlines");
+      return defaultDeadlines;
+    }
+  });
+  const [deadlineTitle, setDeadlineTitle] = useState("");
+  const [deadlineDate, setDeadlineDate] = useState("");
+
+  useEffect(() => {
+    window.localStorage.setItem("college-advisor-deadlines", JSON.stringify(deadlines));
+  }, [deadlines]);
+
+  const formatDeadlineDate = (date: string) => {
+    const [year, month, day] = date.split("-").map(Number);
+
+    if (!year || !month || !day) {
+      return date;
+    }
+
+    return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(
+      new Date(year, month - 1, day),
+    );
+  };
+
+  const handleAddDeadline = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const title = deadlineTitle.trim();
+
+    if (!title || !deadlineDate) {
+      return;
+    }
+
+    setDeadlines((current) => [...current, { id: Date.now(), title, date: deadlineDate }].sort((a, b) => a.date.localeCompare(b.date)));
+    setDeadlineTitle("");
+    setDeadlineDate("");
+  };
 
   const sendMessage = async (message?: string) => {
     const prompt = (message ?? chatInput).trim();
@@ -513,26 +574,44 @@ export default function Home() {
 
     return (
       <section className="mt-8 rounded-[2rem] bg-gradient-to-br from-rose-50 via-white to-sky-50 p-6 shadow-sm ring-1 ring-sky-200">
-        <h2 className="text-2xl font-black text-slate-900">Deadlines</h2>
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose-600">Stay on track</p>
+            <h2 className="mt-1 text-2xl font-black text-slate-900">Deadlines</h2>
+          </div>
+          <p className="text-sm text-slate-600">{deadlines.length} {deadlines.length === 1 ? "deadline" : "deadlines"}</p>
+        </div>
+
+        <form onSubmit={handleAddDeadline} className="mt-6 grid gap-3 rounded-2xl bg-white/80 p-4 ring-1 ring-slate-200 md:grid-cols-[1fr_auto_auto] md:items-end">
+          <label className="text-sm font-semibold text-slate-700">
+            What is due?
+            <input type="text" value={deadlineTitle} onChange={(event) => setDeadlineTitle(event.target.value)} placeholder="e.g. Submit FAFSA" maxLength={100} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-normal text-slate-700 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-200" required />
+          </label>
+          <label className="text-sm font-semibold text-slate-700">
+            Due date
+            <input type="date" value={deadlineDate} onChange={(event) => setDeadlineDate(event.target.value)} className="mt-1 rounded-xl border border-slate-200 bg-white px-3 py-2 font-normal text-slate-700 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-200" required />
+          </label>
+          <button type="submit" className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700">Add deadline</button>
+        </form>
+
         <div className="mt-6 space-y-3">
-          {[
-            ["Common App essay review", "Sep 20"],
-            ["Scholarship application", "Sep 24"],
-            ["Teacher recommendation follow-up", "Sep 27"],
-            ["Financial aid form review", "Oct 1"],
-          ].map(([title, date], index) => (
+          {deadlines.map((deadline, index) => (
             <div
-              key={title}
+              key={deadline.id}
               className={`flex items-center justify-between rounded-2xl px-4 py-3 shadow-sm ring-1 ${
                 index % 2 === 0
                   ? "bg-gradient-to-r from-rose-100 to-orange-50 ring-rose-200"
                   : "bg-gradient-to-r from-sky-100 to-violet-50 ring-sky-200"
               }`}
             >
-              <span className="text-slate-700">{title}</span>
-              <span className="rounded-full bg-slate-900 px-2 py-1 text-xs font-bold text-white">{date}</span>
+              <span className="text-slate-700">{deadline.title}</span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-slate-900 px-2 py-1 text-xs font-bold text-white">{formatDeadlineDate(deadline.date)}</span>
+                <button type="button" onClick={() => setDeadlines((current) => current.filter((item) => item.id !== deadline.id))} className="rounded-full px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-white hover:text-rose-600" aria-label={`Remove ${deadline.title}`}>Remove</button>
+              </div>
             </div>
           ))}
+          {deadlines.length === 0 && <p className="rounded-2xl bg-white/70 px-4 py-6 text-center text-sm text-slate-500">No deadlines yet. Add one above to get started.</p>}
         </div>
       </section>
     );
