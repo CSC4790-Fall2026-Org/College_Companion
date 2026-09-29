@@ -38,7 +38,30 @@ type Deadline = {
 
 type DeadlineView = "list" | "calendar";
 
+type ResourceCategory = "All" | "Applications" | "Financial Aid" | "Scholarships" | "Planning";
+
+type Resource = {
+  title: string;
+  category: Exclude<ResourceCategory, "All">;
+  description: string;
+  href: string;
+};
+
 const calendarWeekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const resourceCategories: ResourceCategory[] = ["All", "Applications", "Financial Aid", "Scholarships", "Planning"];
+
+const resources: Resource[] = [
+  { title: "Common App", category: "Applications", description: "Create and manage your college applications in one place.", href: "https://www.commonapp.org/" },
+  { title: "College application checklist", category: "Applications", description: "Review key application steps, materials, and timing.", href: "https://studentaid.gov/articles/8-steps-to-preparing-for-college/" },
+  { title: "Federal Student Aid", category: "Financial Aid", description: "Find FAFSA guidance, aid types, and federal college planning tools.", href: "https://studentaid.gov/" },
+  { title: "FAFSA form", category: "Financial Aid", description: "Start or continue your Free Application for Federal Student Aid.", href: "https://studentaid.gov/h/apply-for-aid/fafsa" },
+  { title: "CSS Profile", category: "Financial Aid", description: "Learn about the CSS Profile for institutional financial aid.", href: "https://cssprofile.collegeboard.org/" },
+  { title: "BigFuture scholarships", category: "Scholarships", description: "Search scholarships and explore paying-for-college resources.", href: "https://bigfuture.collegeboard.org/pay-for-college/scholarship-search" },
+  { title: "Federal scholarship search", category: "Scholarships", description: "Explore official scholarship and grant opportunities.", href: "https://www.careeronestop.org/Toolkit/Training/find-scholarships.aspx" },
+  { title: "College Scorecard", category: "Planning", description: "Compare colleges using costs, programs, and outcomes.", href: "https://collegescorecard.ed.gov/" },
+  { title: "College Board BigFuture", category: "Planning", description: "Explore colleges, majors, careers, and planning tools.", href: "https://bigfuture.collegeboard.org/" },
+];
 
 const getDateKey = (year: number, month: number, day: number) =>
   `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -67,6 +90,8 @@ export default function Home() {
   const [chatInput, setChatInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [chatError, setChatError] = useState("");
+  const [resourceSearch, setResourceSearch] = useState("");
+  const [resourceCategory, setResourceCategory] = useState<ResourceCategory>("All");
   const [deadlines, setDeadlines] = useState<Deadline[]>(() => {
     if (typeof window === "undefined") {
       return defaultDeadlines;
@@ -127,6 +152,14 @@ export default function Home() {
   const shiftCalendarMonth = (offset: number) => {
     setCalendarDate((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
   };
+
+  const filteredResources = resources.filter((resource) => {
+    const matchesCategory = resourceCategory === "All" || resource.category === resourceCategory;
+    const searchText = resourceSearch.trim().toLowerCase();
+    const matchesSearch = !searchText || `${resource.title} ${resource.description} ${resource.category}`.toLowerCase().includes(searchText);
+
+    return matchesCategory && matchesSearch;
+  });
 
   const sendMessage = async (message?: string) => {
     const prompt = (message ?? chatInput).trim();
@@ -276,11 +309,11 @@ export default function Home() {
     if (activeTab === "Home") {
       return (
         <section className="fade-in-up mt-8">
-          <div className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-sky-500 via-indigo-500 to-fuchsia-500 p-[1px] shadow-[0_25px_80px_rgba(99,102,241,0.35)]">
-            <div className="rounded-[calc(2rem-1px)] bg-slate-950/90 p-6 text-white md:p-8">
+          <div className="overflow-hidden rounded-[2rem] bg-white/35 p-[1px] shadow-[0_25px_80px_rgba(99,102,241,0.2)] backdrop-blur-md">
+            <div className="rounded-[calc(2rem-1px)] bg-white/15 p-6 text-slate-900 shadow-inner backdrop-blur-md md:p-8">
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-200">
+                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-800">
                     Your college orbit
                   </p>
                   <h2 className="mt-2 text-3xl font-black md:text-5xl">Good morning, Alex</h2>
@@ -292,14 +325,14 @@ export default function Home() {
 
               <div className="mt-8 grid gap-4 md:grid-cols-3">
                 {[
-                  { label: "Applications", value: "8", note: "+2 this month", tone: "bg-emerald-400/20 text-emerald-100" },
-                  { label: "Upcoming deadlines", value: "3", note: "Due this week", tone: "bg-amber-400/20 text-amber-100" },
-                  { label: "Saved resources", value: "14", note: "Updated recently", tone: "bg-sky-400/20 text-sky-100" },
+                  { label: "Applications", value: "8", note: "+2 this month", tone: "bg-emerald-400/20 text-emerald-950" },
+                  { label: "Upcoming deadlines", value: "3", note: "Due this week", tone: "bg-amber-400/20 text-amber-950" },
+                  { label: "Saved resources", value: "14", note: "Updated recently", tone: "bg-sky-400/20 text-sky-950" },
                 ].map((card) => (
                   <div key={card.label} className={`card-lift rounded-2xl border border-white/10 p-4 ${card.tone}`}>
-                    <p className="text-sm text-white/70">{card.label}</p>
-                    <p className="mt-2 text-3xl font-black text-white">{card.value}</p>
-                    <p className="mt-1 text-sm text-white/80">{card.note}</p>
+                    <p className="text-sm opacity-75">{card.label}</p>
+                    <p className="mt-2 text-3xl font-black">{card.value}</p>
+                    <p className="mt-1 text-sm opacity-80">{card.note}</p>
                   </div>
                 ))}
               </div>
@@ -439,19 +472,52 @@ export default function Home() {
     if (activeTab === "Resources") {
       return (
         <section className="mt-8 rounded-[2rem] bg-gradient-to-br from-amber-50 via-yellow-50 to-rose-100 p-6 shadow-sm ring-1 ring-amber-200">
-          <h2 className="text-2xl font-black text-slate-900">Resources</h2>
+          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">Your planning library</p>
+              <h2 className="mt-1 text-2xl font-black text-slate-900">Resources</h2>
+            </div>
+            <p className="text-sm text-slate-600">{filteredResources.length} {filteredResources.length === 1 ? "resource" : "resources"}</p>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-3 md:flex-row">
+            <label className="flex-1 text-sm font-semibold text-slate-700">
+              Search resources
+              <input
+                type="search"
+                value={resourceSearch}
+                onChange={(event) => setResourceSearch(event.target.value)}
+                placeholder="Search scholarships, FAFSA, applications..."
+                className="mt-1 w-full rounded-xl border border-amber-200 bg-white/85 px-3 py-2 font-normal text-slate-700 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-200"
+              />
+            </label>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {resourceCategories.map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setResourceCategory(category)}
+                className={`rounded-full px-3 py-2 text-xs font-bold transition ${
+                  resourceCategory === category
+                    ? "bg-slate-900 text-white shadow-sm"
+                    : "bg-white/80 text-slate-600 ring-1 ring-amber-200 hover:bg-white"
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {[
-              "College match checklist",
-              "Financial aid guide",
-              "Essay planning worksheet",
-              "Campus visit prep",
-              "Scholarship tracker",
-              "Application timeline",
-            ].map((resource, index) => (
-              <div
-                key={resource}
-                className={`rounded-[1.5rem] p-4 shadow-sm ring-1 ${
+            {filteredResources.map((resource, index) => (
+              <a
+                key={resource.title}
+                href={resource.href}
+                target="_blank"
+                rel="noreferrer"
+                className={`group rounded-[1.5rem] p-4 shadow-sm ring-1 transition hover:-translate-y-1 hover:shadow-lg ${
                   index % 3 === 0
                     ? "bg-gradient-to-br from-pink-200 to-orange-100 ring-pink-200"
                     : index % 3 === 1
@@ -459,10 +525,20 @@ export default function Home() {
                       : "bg-gradient-to-br from-violet-200 to-fuchsia-100 ring-violet-200"
                 }`}
               >
-                <p className="text-sm font-semibold text-slate-700">{resource}</p>
-              </div>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="rounded-full bg-white/70 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-600">{resource.category}</span>
+                  <span className="text-slate-500 transition group-hover:translate-x-1" aria-hidden="true">-&gt;</span>
+                </div>
+                <h3 className="mt-4 text-lg font-black text-slate-900">{resource.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-700">{resource.description}</p>
+                <p className="mt-4 text-xs font-bold text-slate-500">Open official resource</p>
+              </a>
             ))}
           </div>
+
+          {filteredResources.length === 0 && (
+            <p className="mt-6 rounded-2xl bg-white/75 px-4 py-8 text-center text-sm text-slate-600">No resources match that search. Try another topic or choose All.</p>
+          )}
         </section>
       );
     }
