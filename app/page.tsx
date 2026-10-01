@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { type FormEvent, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -797,6 +798,12 @@ export default function Home() {
                 {tab}
               </button>
             ))}
+            <Link
+              href="/account"
+              className="rounded-full bg-white/80 px-4 py-2 text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900"
+            >
+              Account
+            </Link>
           </nav>
         </header>
 
