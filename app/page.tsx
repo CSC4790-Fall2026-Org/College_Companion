@@ -317,7 +317,7 @@ export default function Home() {
                   <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-800">
                     Your college orbit
                   </p>
-                  <h2 className="mt-2 text-3xl font-black md:text-5xl">Good morning, Alex</h2>
+                  <h2 className="mt-2 text-3xl font-black md:text-5xl">Good morning, BRANDO!</h2>
                 </div>
                 <button className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:scale-[1.02]">
                   New task
