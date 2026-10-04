@@ -4,7 +4,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-const tabs = ["Home", "College Chat", "Resources", "Deadlines", "Visualizations"] as const;
+const tabs = ["Home", "College Chat", "Resources", "Deadlines", "Visualizations", "Checklist"] as const;
 type Tab = (typeof tabs)[number];
 
 const quickPrompts = [
@@ -670,6 +670,15 @@ export default function Home() {
               </div>
             </div>
           </div>
+        </section>
+      );
+    }
+
+    if (activeTab === "Checklist") {
+      return (
+        <section className="fade-in-up mt-8 rounded-[2rem] bg-gradient-to-br from-emerald-50 via-white to-sky-100 p-6 shadow-sm ring-1 ring-emerald-200">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">One step at a time</p>
+        <h2 className="mt-1 text-2xl font-black text-slate-900">Checklist</h2>
         </section>
       );
     }
