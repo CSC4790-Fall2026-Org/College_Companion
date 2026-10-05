@@ -508,7 +508,7 @@ export default function Home() {
             <form onSubmit={handleChatSubmit} className="mt-5 flex items-center gap-3 rounded-2xl bg-slate-100 p-3 ring-1 ring-slate-200">
               <input
                 type="text"
-                placeholder="Ask College Advisor..."
+                placeholder="Ask College Companion..."
                 value={chatInput}
                 onChange={(event) => setChatInput(event.target.value)}
                 disabled={isSending}
@@ -899,7 +899,7 @@ export default function Home() {
       <div className="relative mx-auto max-w-5xl">
         <header className="flex flex-col gap-4 rounded-[2rem] border border-white/50 bg-white/70 px-6 py-4 shadow-[0_15px_50px_rgba(15,23,42,0.12)] backdrop-blur-md md:flex-row md:items-center md:justify-between">
           <h1 className="text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
-            College Advisor
+            College Companion
           </h1>
 
           <nav className="flex flex-wrap items-center gap-3 text-sm font-semibold text-slate-600">
