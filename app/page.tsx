@@ -685,48 +685,6 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="rounded-[1.5rem] bg-gradient-to-br from-fuchsia-500 via-purple-500 to-cyan-400 p-5 text-white shadow-lg shadow-violet-200 md:col-span-2">
-              <h3 className="text-lg font-bold">Mood board</h3>
-              <div className="mt-5 grid gap-4 md:grid-cols-4">
-                {[
-                  { shape: "rounded-full", color: "bg-yellow-200", label: "Bright ideas" },
-                  { shape: "rotate-12 rounded-2xl", color: "bg-pink-200", label: "Dream schools" },
-                  { shape: "-rotate-6 rounded-xl", color: "bg-cyan-200", label: "Deadlines" },
-                  { shape: "rounded-[2rem]", color: "bg-emerald-200", label: "Wins" },
-                ].map((item) => (
-                  <div key={item.label} className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
-                    <div className={`h-16 w-full ${item.color} ${item.shape}`} />
-                    <p className="mt-3 text-sm font-semibold">{item.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-[1.5rem] bg-slate-950 p-5 text-white shadow-sm ring-1 ring-slate-800">
-              <h3 className="text-lg font-bold">Chaos meter</h3>
-              <div className="mt-5 flex items-end gap-3">
-                {[35, 55, 75, 95, 68, 82].map((value, index) => (
-                  <div key={index} className="flex-1">
-                    <div
-                      className="w-full rounded-t-xl bg-gradient-to-t from-pink-500 via-orange-400 to-yellow-300"
-                      style={{ height: `${value}%` }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-[1.5rem] bg-gradient-to-br from-white to-slate-100 p-5 shadow-sm ring-1 ring-slate-200">
-              <h3 className="text-lg font-bold text-slate-900">Orbital planner</h3>
-              <div className="mt-5 flex items-center justify-center">
-                <div className="relative flex h-40 w-40 items-center justify-center rounded-full border-4 border-dashed border-violet-300">
-                  <div className="absolute h-24 w-24 rounded-full bg-gradient-to-br from-pink-300 to-violet-500" />
-                  <div className="absolute left-3 top-5 h-4 w-4 rounded-full bg-yellow-300" />
-                  <div className="absolute bottom-4 right-5 h-5 w-5 rounded-full bg-cyan-300" />
-                  <div className="absolute right-1 top-1/2 h-3 w-3 rounded-full bg-white" />
-                </div>
-              </div>
-            </div>
           </div>
         </section>
       );
