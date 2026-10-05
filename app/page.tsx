@@ -74,6 +74,48 @@ const defaultDeadlines: Deadline[] = [
   { id: 4, title: "Financial aid form review", date: "2026-10-01" },
 ];
 
+type Requirement = {
+  id: number;
+  title: string;
+  category: string;
+  date: string;
+  doneLabel: string;
+  openLabel: string;
+  done: boolean;
+};
+
+type School = {
+  id: number;
+  name: string;
+  dueLabel: string;
+  requirements: Requirement[];
+};
+
+const defaultSchools: School[] = [
+  {
+    id: 1,
+    name: "Westview College",
+    dueLabel: "1 due today",
+    requirements: [
+      { id: 1, title: "Common Application", category: "Application", date: "Oct 1", doneLabel: "Submitted", openLabel: "Upcoming", done: true },
+      { id: 2, title: "Official transcript upload", category: "Academic records", date: "Oct 2", doneLabel: "Received", openLabel: "Upcoming", done: true },
+      { id: 3, title: "Teacher recommendation letters", category: "Recommendations", date: "Oct 3", doneLabel: "Complete", openLabel: "Upcoming", done: true },
+      { id: 4, title: "Community supplemental essay", category: "Writing supplement", date: "Oct 4", doneLabel: "Submitted", openLabel: "Due today", done: false },
+      { id: 5, title: "CSS Profile and financial aid forms", category: "Financial aid", date: "Oct 10", doneLabel: "Submitted", openLabel: "Upcoming", done: false },
+    ],
+  },
+  {
+    id: 2,
+    name: "Northbridge University",
+    dueLabel: "Due in 2 days",
+    requirements: [
+      { id: 1, title: "Coalition Application", category: "Application", date: "Oct 1", doneLabel: "Submitted", openLabel: "Upcoming", done: true },
+      { id: 2, title: "SAT score report", category: "Testing", date: "Oct 2", doneLabel: "Received", openLabel: "Upcoming", done: true },
+      { id: 3, title: "Architecture portfolio submission", category: "Portfolio", date: "Oct 6", doneLabel: "Submitted", openLabel: "Due in 2 days", done: false },
+    ],
+  },
+];
+
 const initialChatMessages: ChatMessage[] = [
   {
     sender: "bot",
@@ -119,6 +161,22 @@ export default function Home() {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
   });
+  const [schools, setSchools] = useState<School[]>(defaultSchools);
+
+  const toggleRequirement = (schoolId: number, requirementId: number) => {
+  setSchools((current) =>
+    current.map((school) =>
+      school.id === schoolId
+        ? {
+            ...school,
+            requirements: school.requirements.map((r) =>
+              r.id === requirementId ? { ...r, done: !r.done } : r,
+            ),
+          }
+        : school,
+    ),
+  );
+  };
 
   useEffect(() => {
     window.localStorage.setItem("college-advisor-deadlines", JSON.stringify(deadlines));
@@ -676,12 +734,105 @@ export default function Home() {
 
     if (activeTab === "Checklist") {
       return (
-        <section className="fade-in-up mt-8 rounded-[2rem] bg-gradient-to-br from-emerald-50 via-white to-sky-100 p-6 shadow-sm ring-1 ring-emerald-200">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">One step at a time</p>
-        <h2 className="mt-1 text-2xl font-black text-slate-900">Checklist</h2>
-        </section>
-      );
-    }
+       <section className="fade-in-up mt-8 rounded-[2rem] bg-gradient-to-br from-emerald-50 via-white to-sky-100 p-6 shadow-sm ring-1 ring-emerald-200">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-black text-slate-900">College Companion Checklist</h2>
+          <div className="flex items-center gap-3">
+            <input
+              type="search"
+              placeholder="Search tasks or schools"
+              className="mx-auto w-full max-w-md flex-1 rounded-xl border border-slate-200 bg-white/85 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-200"
+            />
+          <button
+            type="button"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+          >
+            Filter
+          </button>
+
+          <button
+            type="button"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+          >
+            Print
+          </button>
+
+          <button
+            type="button"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+          >
+            Add school
+          </button>
+
+        </div>
+      </div>
+
+      <div className="mt-6 space-y-4">
+  {schools.map((school) => {
+    const completed = school.requirements.filter((r) => r.done).length;
+    const percent = (completed / school.requirements.length) * 100;
+
+    return (
+      <div key={school.id} className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+        {/* School header */}
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <div>
+            <p className="text-sm font-bold text-slate-900">{school.name}</p>
+            <p className="text-xs text-slate-500">{school.requirements.length} requirements</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-full"
+              style={{ background: `conic-gradient(#047857 0 ${percent}%, #e2e8f0 ${percent}% 100%)` }}
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[10px] font-bold text-slate-700">
+                {completed}/{school.requirements.length}
+              </div>
+            </div>
+            <span className="w-40 rounded-full border border-slate-200 px-3 py-1 text-center text-xs font-semibold text-rose-600">
+              {school.dueLabel}
+            </span>
+          </div>
+        </div>
+
+        {/* Requirement rows */}
+        {school.requirements.map((r) => (
+          <label
+            key={r.id}
+            className="flex cursor-pointer items-center gap-4 border-b border-slate-100 px-4 py-3 last:border-b-0"
+          >
+            <input
+              type="checkbox"
+              checked={r.done}
+              onChange={() => toggleRequirement(school.id, r.id)}
+              className="h-4 w-4 accent-emerald-700"
+            />
+            <div className="flex-1">
+              <p className={`text-sm font-semibold ${r.done ? "text-slate-400" : "text-slate-900"}`}>{r.title}</p>
+              <p className="text-xs text-slate-400">{r.category}</p>
+            </div>
+            <span className="text-xs text-slate-500">{r.date}</span>
+            <span
+              className={`w-24 rounded-full px-3 py-1 text-center text-xs font-semibold ${
+                r.done
+                  ? "bg-emerald-50 text-emerald-700"
+                  : r.openLabel === "Due today"
+                    ? "bg-rose-50 text-rose-600"
+                    : "bg-slate-100 text-slate-500"
+              }`}
+            >
+              {r.done ? r.doneLabel : r.openLabel}
+            </span>
+          </label>
+        ))}
+      </div>
+    );
+  })}
+</div>
+
+    </section>
+  );
+}
 
     return (
       <section className="mt-8 rounded-[2rem] bg-gradient-to-br from-rose-50 via-white to-sky-50 p-6 shadow-sm ring-1 ring-sky-200">
