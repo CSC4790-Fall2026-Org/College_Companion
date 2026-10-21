@@ -37,3 +37,23 @@ npm run dev
 3. Restart the development server, then open the College Chat tab. Non-casual questions use OpenRouter's web search plugin, which may add search charges to model usage.
 
 Run the app with `npm run dev`.
+
+## AI route tests
+
+Run the route tests with:
+
+```sh
+npm test
+```
+
+The suite checks the two input validation messages shown by the chat route. It does not need API credentials or make network requests.
+
+Example output (timings vary):
+
+```text
+✔ returns a helpful error for a blank entry
+✔ returns a helpful error when the entry exceeds 1,000 characters
+ℹ tests 2
+ℹ pass 2
+ℹ fail 0
+```
