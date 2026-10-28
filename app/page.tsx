@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { type FormEvent, useEffect, useState } from "react";
+import { startTransition, type FormEvent, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -135,25 +135,8 @@ export default function Home() {
   const [chatError, setChatError] = useState("");
   const [resourceSearch, setResourceSearch] = useState("");
   const [resourceCategory, setResourceCategory] = useState<ResourceCategory>("All");
-  const [deadlines, setDeadlines] = useState<Deadline[]>(() => {
-    if (typeof window === "undefined") {
-      return defaultDeadlines;
-    }
-
-    const savedDeadlines = window.localStorage.getItem("college-advisor-deadlines");
-
-    if (!savedDeadlines) {
-      return defaultDeadlines;
-    }
-
-    try {
-      const parsedDeadlines = JSON.parse(savedDeadlines) as Deadline[];
-      return Array.isArray(parsedDeadlines) ? parsedDeadlines : defaultDeadlines;
-    } catch {
-      window.localStorage.removeItem("college-advisor-deadlines");
-      return defaultDeadlines;
-    }
-  });
+  const [deadlines, setDeadlines] = useState<Deadline[]>(defaultDeadlines);
+  const [deadlinesLoaded, setDeadlinesLoaded] = useState(false);
   const [deadlineTitle, setDeadlineTitle] = useState("");
   const [deadlineDate, setDeadlineDate] = useState("");
   const [deadlineView, setDeadlineView] = useState<DeadlineView>("list");
@@ -179,8 +162,36 @@ export default function Home() {
   };
 
   useEffect(() => {
+    const savedDeadlines = window.localStorage.getItem("college-advisor-deadlines");
+    let savedDeadlineList: Deadline[] | undefined;
+
+    if (savedDeadlines) {
+      try {
+        const parsedDeadlines = JSON.parse(savedDeadlines) as Deadline[];
+        if (Array.isArray(parsedDeadlines)) {
+          savedDeadlineList = parsedDeadlines;
+        }
+      } catch {
+        window.localStorage.removeItem("college-advisor-deadlines");
+      }
+    }
+
+    startTransition(() => {
+      if (savedDeadlineList) {
+        setDeadlines(savedDeadlineList);
+      }
+
+      setDeadlinesLoaded(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!deadlinesLoaded) {
+      return;
+    }
+
     window.localStorage.setItem("college-advisor-deadlines", JSON.stringify(deadlines));
-  }, [deadlines]);
+  }, [deadlines, deadlinesLoaded]);
 
   const formatDeadlineDate = (date: string) => {
     const [year, month, day] = date.split("-").map(Number);
