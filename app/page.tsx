@@ -220,6 +220,21 @@ export default function Home() {
     return matchesCategory && matchesSearch;
   });
 
+  const today = new Date();
+  const todayKey = getDateKey(today.getFullYear(), today.getMonth(), today.getDate());
+  const upcomingDeadlines = deadlines
+    .filter((deadline) => deadline.date >= todayKey)
+    .sort((first, second) => first.date.localeCompare(second.date));
+  const overdueDeadlines = deadlines
+    .filter((deadline) => deadline.date < todayKey)
+    .sort((first, second) => second.date.localeCompare(first.date));
+  const dashboardDeadlines = [...upcomingDeadlines, ...overdueDeadlines].slice(0, 3);
+  const totalRequirements = schools.reduce((total, school) => total + school.requirements.length, 0);
+  const completedRequirements = schools.reduce(
+    (total, school) => total + school.requirements.filter((requirement) => requirement.done).length,
+    0,
+  );
+
   const sendMessage = async (message?: string) => {
     const prompt = (message ?? chatInput).trim();
 
@@ -375,7 +390,7 @@ export default function Home() {
                   <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-800">
                     Your college orbit
                   </p>
-                  <h2 className="mt-2 text-3xl font-black md:text-5xl">Good morning, Brando!</h2>
+                  <h2 className="mt-2 text-3xl font-black md:text-5xl">Your college overview</h2>
                 </div>
                 <button className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:scale-[1.02]">
                   New task
@@ -384,9 +399,24 @@ export default function Home() {
 
               <div className="mt-8 grid gap-4 md:grid-cols-3">
                 {[
-                  { label: "Applications", value: "8", note: "+2 this month", tone: "bg-emerald-400/20 text-emerald-950" },
-                  { label: "Upcoming deadlines", value: "3", note: "Due this week", tone: "bg-amber-400/20 text-amber-950" },
-                  { label: "Saved resources", value: "14", note: "Updated recently", tone: "bg-sky-400/20 text-sky-950" },
+                  {
+                    label: "Applications",
+                    value: schools.length,
+                    note: `${completedRequirements} of ${totalRequirements} checklist items complete`,
+                    tone: "bg-emerald-400/20 text-emerald-950",
+                  },
+                  {
+                    label: "Tracked deadlines",
+                    value: deadlines.length,
+                    note: `${overdueDeadlines.length} overdue · ${upcomingDeadlines.length} upcoming`,
+                    tone: "bg-amber-400/20 text-amber-950",
+                  },
+                  {
+                    label: "Planning resources",
+                    value: resources.length,
+                    note: "Available in Resources",
+                    tone: "bg-sky-400/20 text-sky-950",
+                  },
                 ].map((card) => (
                   <div key={card.label} className={`card-lift rounded-2xl border border-white/10 p-4 ${card.tone}`}>
                     <p className="text-sm opacity-75">{card.label}</p>
@@ -400,34 +430,42 @@ export default function Home() {
 
           <div className="mt-8 grid gap-6 md:grid-cols-2">
             <div className="card-lift rounded-[2rem] bg-gradient-to-br from-pink-100 via-rose-50 to-orange-100 p-5 shadow-sm ring-1 ring-pink-200">
-              <h3 className="text-xl font-bold text-slate-900">Upcoming deadlines</h3>
+              <h3 className="text-xl font-bold text-slate-900">Your deadlines</h3>
               <ul className="mt-4 space-y-3 text-sm text-slate-700">
-                <li className="flex items-center justify-between rounded-2xl bg-white/80 px-3 py-2 shadow-sm">
-                  <span>Common App essay review</span>
-                  <span className="rounded-full bg-pink-500 px-2 py-1 text-xs font-bold text-white">Sep 20</span>
-                </li>
-                <li className="flex items-center justify-between rounded-2xl bg-white/80 px-3 py-2 shadow-sm">
-                  <span>Scholarship application</span>
-                  <span className="rounded-full bg-amber-500 px-2 py-1 text-xs font-bold text-white">Sep 24</span>
-                </li>
-                <li className="flex items-center justify-between rounded-2xl bg-white/80 px-3 py-2 shadow-sm">
-                  <span>Teacher recommendation follow-up</span>
-                  <span className="rounded-full bg-sky-500 px-2 py-1 text-xs font-bold text-white">Sep 27</span>
-                </li>
+                {dashboardDeadlines.map((deadline, index) => {
+                  const isOverdue = deadline.date < todayKey;
+
+                  return (
+                  <li key={deadline.id} className="flex items-center justify-between rounded-2xl bg-white/80 px-3 py-2 shadow-sm">
+                    <span>{deadline.title}</span>
+                    <span className={`rounded-full px-2 py-1 text-xs font-bold text-white ${isOverdue ? "bg-rose-600" : index % 2 === 0 ? "bg-pink-500" : "bg-amber-500"}`}>
+                      {isOverdue ? `Overdue · ${formatDeadlineDate(deadline.date)}` : deadline.date === todayKey ? "Due today" : formatDeadlineDate(deadline.date)}
+                    </span>
+                  </li>
+                  );
+                })}
+                {deadlines.length === 0 && (
+                  <li className="rounded-2xl bg-white/80 px-3 py-4 text-slate-600 shadow-sm">
+                    No deadlines yet. Add one in the Deadlines tab.
+                  </li>
+                )}
               </ul>
             </div>
 
             <div className="card-lift rounded-[2rem] bg-gradient-to-br from-cyan-100 via-sky-50 to-violet-100 p-5 shadow-sm ring-1 ring-cyan-200">
               <h3 className="text-xl font-bold text-slate-900">Helpful resources</h3>
               <div className="mt-4 space-y-3">
-                {[
-                  "College match checklist",
-                  "Financial aid planning guide",
-                  "Essay brainstorming worksheet",
-                ].map((resource) => (
-                  <div key={resource} className="rounded-2xl bg-white/80 px-3 py-3 text-sm font-medium text-slate-700 shadow-sm">
-                    {resource}
-                  </div>
+                {resources.slice(0, 3).map((resource) => (
+                  <a
+                    key={resource.title}
+                    href={resource.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block rounded-2xl bg-white/80 px-3 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-white"
+                  >
+                    <span className="block">{resource.title}</span>
+                    <span className="mt-1 block text-xs font-normal text-slate-500">{resource.category}</span>
+                  </a>
                 ))}
               </div>
             </div>
