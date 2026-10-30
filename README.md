@@ -12,12 +12,23 @@ cd college-advisor-app
 npm install  
 
 
-**Add these lines to .env.local**
+**Add these lines to `.env.local`**
 
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_publishable_key  
-NEXT_PUBLIC_SUPABASE_URL=https://bflfyybqeuslnbzxewbh.supabase.co/rest/v1/  
-OPENROUTER_API_KEY=your_openrouter_api_key  
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+CLERK_SECRET_KEY=your_clerk_secret_key
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+OPENROUTER_API_KEY=your_openrouter_api_key
 OPENROUTER_MODEL=openai/gpt-4o-mini
+```
+
+The Clerk CLI can provision temporary development keys with `npx -y clerk@latest init`.
+Claim the development application with `npx -y clerk@latest auth login` before using it
+outside local development. Keep `CLERK_SECRET_KEY` server-side.
+
+Supabase is no longer used for login. Its configuration is only needed if the app adds
+features that use the Supabase database.
 
 
 **Open up terminal and run:**  

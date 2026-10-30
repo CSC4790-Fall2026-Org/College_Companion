@@ -1,6 +1,7 @@
 "use client";
+import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import { startTransition, type FormEvent, useEffect, useState } from "react";
+import { Suspense, startTransition, type FormEvent, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -965,12 +966,29 @@ export default function Home() {
                 {tab}
               </button>
             ))}
-            <Link
-              href="/account"
-              className="rounded-full bg-white/80 px-4 py-2 text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900"
-            >
-              Account
-            </Link>
+            <Suspense>
+              <Show when="signed-out">
+                <SignInButton>
+                  <button className="rounded-full bg-white/80 px-4 py-2 text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900">
+                    Sign in
+                  </button>
+                </SignInButton>
+                <SignUpButton>
+                  <button className="rounded-full bg-slate-900 px-4 py-2 text-white transition-colors hover:bg-slate-700">
+                    Create account
+                  </button>
+                </SignUpButton>
+              </Show>
+              <Show when="signed-in">
+                <Link
+                  href="/account"
+                  className="rounded-full bg-white/80 px-4 py-2 text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                >
+                  Account
+                </Link>
+                <UserButton />
+              </Show>
+            </Suspense>
           </nav>
         </header>
 
