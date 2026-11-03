@@ -838,26 +838,26 @@ export default function Home() {
       </div>
     );
   })}
-  </div>
-    {showAddSchool && (
-  <div
-    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-    onClick={() => setShowAddSchool(false)}
-  >
-    <div
-      className="h-96 w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl"
-      onClick={(event) => event.stopPropagation()}
-    >
-      <button
-        type="button"
+      </div>
+        {showAddSchool && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center"
         onClick={() => setShowAddSchool(false)}
-        className="text-sm font-semibold text-slate-500 hover:text-slate-900"
       >
-        Close
-      </button>
-    </div>
-  </div>
-  )}
+      <div
+        className="h-[48rem] w-full max-w-4xl rounded-2xl bg-white p-6 shadow-xl ring-1 ring-slate-200"
+        onClick={(event) => event.stopPropagation()}
+      >
+          <button
+            type="button"
+            onClick={() => setShowAddSchool(false)}
+            className="text-sm font-semibold text-slate-500 hover:text-slate-900"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    )}
     </section>
   );
 }
