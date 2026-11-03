@@ -147,6 +147,14 @@ export default function Home() {
   });
   const [schools, setSchools] = useState<School[]>(defaultSchools);
   const [showAddSchool, setShowAddSchool] = useState(false);
+  const [newSchoolName, setNewSchoolName] = useState("");
+  const [newAppType, setNewAppType] = useState("");
+  const [newAppDueDate, setNewAppDueDate] = useState("");
+  const [newTaskName, setNewTaskName] = useState("");
+  const [newTaskDate, setNewTaskDate] = useState("");
+  const [newTaskType, setNewTaskType] = useState("");
+  const [editingSchoolId, setEditingSchoolId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState("");
 
   const toggleRequirement = (schoolId: number, requirementId: number) => {
   setSchools((current) =>
@@ -162,6 +170,79 @@ export default function Home() {
     ),
   );
   };
+
+  const closeAddSchool = () => {
+    setShowAddSchool(false);
+    setNewSchoolName("");
+    setNewAppType("");
+    setNewAppDueDate("");
+    setNewTaskName("");
+    setNewTaskDate("");
+    setNewTaskType("");
+  };
+
+  const handleAddSchool = () => {
+    const name = newSchoolName.trim();
+
+    if (!name) {
+      return;
+    }
+
+    const requirements: Requirement[] = [];
+
+   if (newAppType) {
+      requirements.push({
+        id: 1,
+        title: newAppType,
+        category: "Application",
+        date: newAppDueDate ? formatDeadlineDate(newAppDueDate) : "",
+        doneLabel: "Submitted",
+        openLabel: "Upcoming",
+        done: false,
+      });
+    }
+
+  if (newTaskName.trim()) {
+    requirements.push({
+      id: requirements.length + 1,
+      title: newTaskName.trim(),
+      category: newTaskType || "Task",
+      date: newTaskDate ? formatDeadlineDate(newTaskDate) : "",
+      doneLabel: "Complete",
+      openLabel: "Upcoming",
+      done: false,
+    });
+  }
+
+  setSchools((current) => [...current, { id: Date.now(), name, dueLabel: "Upcoming", requirements }]);
+  closeAddSchool();
+  };
+
+  const deleteSchool = (id: number) => {
+  if (!window.confirm("Delete this school and all of its requirements?")) {
+    return;
+  }
+
+  setSchools((current) => current.filter((school) => school.id !== id));
+};
+
+const startEditSchool = (school: School) => {
+  setEditingSchoolId(school.id);
+  setEditingName(school.name);
+};
+
+const saveSchoolName = () => {
+  const name = editingName.trim();
+
+  if (!name) {
+    return;
+  }
+
+  setSchools((current) =>
+    current.map((school) => (school.id === editingSchoolId ? { ...school, name } : school)),
+  );
+  setEditingSchoolId(null);
+};
 
   useEffect(() => {
     const savedDeadlines = window.localStorage.getItem("college-advisor-deadlines");
@@ -780,14 +861,19 @@ export default function Home() {
       <div className="mt-6 space-y-4">
     {schools.map((school) => {
     const completed = school.requirements.filter((r) => r.done).length;
-    const percent = (completed / school.requirements.length) * 100;
-
+    const percent = school.requirements.length ? (completed / school.requirements.length) * 100 : 0;
     return (
       <div key={school.id} className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
         {/* School header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <div>
-            <p className="text-sm font-bold text-slate-900">{school.name}</p>
+          {editingSchoolId === school.id ? (
+            <input autoFocus type="text" value={editingName} onChange={(event) => setEditingName(event.target.value)} onKeyDown={(event) => {
+              if (event.key === "Enter") saveSchoolName();
+              if (event.key === "Escape") setEditingSchoolId(null);
+          }}
+          className="rounded-lg border border-slate-200 px-2 py-1 text-sm font-bold text-slate-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"/>) : (<p className="text-sm font-bold text-slate-900">{school.name}</p>
+            )}
             <p className="text-xs text-slate-500">{school.requirements.length} requirements</p>
           </div>
           <div className="flex items-center gap-4">
@@ -802,6 +888,37 @@ export default function Home() {
             <span className="w-40 rounded-full border border-slate-200 px-3 py-1 text-center text-xs font-semibold text-rose-600">
               {school.dueLabel}
             </span>
+            {editingSchoolId === school.id ? (
+  <div className="flex gap-2">
+    <button
+      type="button"
+      onClick={saveSchoolName}
+      className="rounded-lg bg-emerald-700 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-800">
+      Save
+    </button>
+      <button
+        type="button"
+        onClick={() => setEditingSchoolId(null)}
+        className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+        Cancel
+      </button>
+      </div>
+       ) : (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => startEditSchool(school)}
+            className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => deleteSchool(school.id)}
+            className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50">
+              Delete
+            </button>
+            </div>
+          )}
           </div>
         </div>
 
@@ -840,24 +957,139 @@ export default function Home() {
   })}
       </div>
         {showAddSchool && (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center"
-        onClick={() => setShowAddSchool(false)}
-      >
-      <div
-        className="h-[48rem] w-full max-w-4xl rounded-2xl bg-white p-6 shadow-xl ring-1 ring-slate-200"
-        onClick={(event) => event.stopPropagation()}
-      >
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center"
+    onClick={closeAddSchool}
+  >
+    <div
+      className="h-[48rem] max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl ring-1 ring-slate-200"
+      onClick={(event) => event.stopPropagation()}
+    >
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-slate-900">Add a school</h2>
+        <button
+          type="button"
+          onClick={closeAddSchool}
+          aria-label="Close"
+          className="rounded-full px-3 py-1 text-lg font-semibold text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
+        <div className="border-b border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">
+          School details
+        </div>
+
+        <div className="space-y-4 px-4 py-4">
+          <label className="block text-xs font-semibold text-slate-700">
+            School name <span className="text-rose-500">*</span>
+            <input
+              type="text"
+              value={newSchoolName}
+              onChange={(event) => setNewSchoolName(event.target.value)}
+              placeholder="e.g. Northbridge University"
+              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+            />
+          </label>
+
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block text-xs font-semibold text-slate-700">
+              Application Type
+              <select
+                value={newAppType}
+                onChange={(event) => setNewAppType(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-700 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+              >
+                <option value="">Select an application type</option>
+                <option>Common Application</option>
+                <option>Coalition Application</option>
+                <option>Direct application</option>
+              </select>
+            </label>
+            <label className="block text-xs font-semibold text-slate-700">
+              Application Due Date
+              <input
+                type="date"
+                value={newAppDueDate}
+                onChange={(event) => setNewAppDueDate(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+              />
+            </label>
+          </div>
+
+          <div className="space-y-4 pt-2">
+            <p className="text-sm font-semibold text-slate-900">New task</p>
+
+            <label className="block text-xs font-semibold text-slate-700">
+              Task name
+              <input
+                type="text"
+                value={newTaskName}
+                onChange={(event) => setNewTaskName(event.target.value)}
+                placeholder="e.g. Review application packet"
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+              />
+            </label>
+
+            <label className="block text-xs font-semibold text-slate-700">
+              Task due date
+              <input
+                type="date"
+                value={newTaskDate}
+                onChange={(event) => setNewTaskDate(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+              />
+            </label>
+
+            <label className="block text-xs font-semibold text-slate-700">
+              Task type
+              <select
+                value={newTaskType}
+                onChange={(event) => setNewTaskType(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-700 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+              >
+                <option value="">Select a task type</option>
+                <option>Application</option>
+                <option>Academic records</option>
+                <option>Recommendations</option>
+                <option>Writing supplement</option>
+                <option>Financial aid</option>
+              </select>
+            </label>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Upload task
+              </button>
+              <button
+                type="button"
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Add another task
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-slate-200 p-3">
           <button
             type="button"
-            onClick={() => setShowAddSchool(false)}
-            className="text-sm font-semibold text-slate-500 hover:text-slate-900"
+            onClick={handleAddSchool}
+            disabled={!newSchoolName.trim()}
+            className="w-full rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Close
+            + Add school
           </button>
+          </div>
         </div>
       </div>
-    )}
+    </div>
+  )}
     </section>
   );
 }
