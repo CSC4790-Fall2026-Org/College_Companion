@@ -146,6 +146,7 @@ export default function Home() {
     return new Date(today.getFullYear(), today.getMonth(), 1);
   });
   const [schools, setSchools] = useState<School[]>(defaultSchools);
+  const [showAddSchool, setShowAddSchool] = useState(false);
 
   const toggleRequirement = (schoolId: number, requirementId: number) => {
   setSchools((current) =>
@@ -767,6 +768,7 @@ export default function Home() {
 
           <button
             type="button"
+            onClick={() => setShowAddSchool(true)}
             className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
           >
             Add school
@@ -776,7 +778,7 @@ export default function Home() {
       </div>
 
       <div className="mt-6 space-y-4">
-  {schools.map((school) => {
+    {schools.map((school) => {
     const completed = school.requirements.filter((r) => r.done).length;
     const percent = (completed / school.requirements.length) * 100;
 
@@ -836,8 +838,26 @@ export default function Home() {
       </div>
     );
   })}
-</div>
-
+  </div>
+    {showAddSchool && (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+    onClick={() => setShowAddSchool(false)}
+  >
+    <div
+      className="h-96 w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl"
+      onClick={(event) => event.stopPropagation()}
+    >
+      <button
+        type="button"
+        onClick={() => setShowAddSchool(false)}
+        className="text-sm font-semibold text-slate-500 hover:text-slate-900"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+  )}
     </section>
   );
 }
