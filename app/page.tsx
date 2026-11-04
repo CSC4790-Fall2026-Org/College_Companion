@@ -55,7 +55,7 @@ const resourceCategories: ResourceCategory[] = ["All", "Applications", "Financia
 
 const resources: Resource[] = [
   { title: "Common App", category: "Applications", description: "Create and manage your college applications in one place.", href: "https://www.commonapp.org/" },
-  { title: "College application checklist", category: "Applications", description: "Review key application steps, materials, and timing.", href: "https://studentaid.gov/articles/8-steps-to-preparing-for-college/" },
+  { title: "College application guide", category: "Applications", description: "Review application steps, materials, and tips for first-year applicants.", href: "https://www.commonapp.org/apply/first-year-students/" },
   { title: "Federal Student Aid", category: "Financial Aid", description: "Find FAFSA guidance, aid types, and federal college planning tools.", href: "https://studentaid.gov/" },
   { title: "FAFSA form", category: "Financial Aid", description: "Start or continue your Free Application for Federal Student Aid.", href: "https://studentaid.gov/h/apply-for-aid/fafsa" },
   { title: "CSS Profile", category: "Financial Aid", description: "Learn about the CSS Profile for institutional financial aid.", href: "https://cssprofile.collegeboard.org/" },
@@ -720,7 +720,6 @@ const saveSchoolName = () => {
               >
                 <div className="flex items-start justify-between gap-3">
                   <span className="rounded-full bg-white/70 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-600">{resource.category}</span>
-                  <span className="text-slate-500 transition group-hover:translate-x-1" aria-hidden="true">-&gt;</span>
                 </div>
                 <h3 className="mt-4 text-lg font-black text-slate-900">{resource.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-700">{resource.description}</p>
