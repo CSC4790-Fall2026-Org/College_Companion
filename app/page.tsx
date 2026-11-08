@@ -156,7 +156,6 @@ export default function Home() {
   const [newTaskDate, setNewTaskDate] = useState("");
   const [newTaskType, setNewTaskType] = useState("");
   const [editingSchoolId, setEditingSchoolId] = useState<number | null>(null);
-  const [editingName, setEditingName] = useState("");
 
   const toggleRequirement = (schoolId: number, requirementId: number) => {
   setSchools((current) =>
@@ -220,13 +219,22 @@ export default function Home() {
   closeAddSchool();
   };
 
-  const deleteSchool = (id: number) => {
-  if (!window.confirm("Delete this school and all of its requirements?")) {
-    return;
-  }
+    const deleteSchool = (id: number) => {
+    if (!window.confirm("Delete this school and all of its requirements?")) {
+      return;
+    }
+    setSchools((current) => current.filter((school) => school.id !== id));
+  };
 
-  setSchools((current) => current.filter((school) => school.id !== id));
-};
+  const removeRequirement = (schoolId: number, requirementId: number) => {
+    setSchools((current) =>
+      current.map((school) =>
+        school.id === schoolId
+          ? { ...school, requirements: school.requirements.filter((r) => r.id !== requirementId) }
+          : school,
+      ),
+    );
+  };
 
 const startEditSchool = (school: School) => {
   setEditingSchoolId(school.id);
@@ -832,8 +840,7 @@ const saveSchoolName = () => {
             <input
               type="search"
               placeholder="Search tasks or schools"
-              className="mx-auto w-full max-w-md flex-1 rounded-xl border border-slate-200 bg-white/85 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-200"
-            />
+              className="mx-auto w-full max-w-md flex-1 rounded-xl border border-slate-200 bg-white/85 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-200"/>
           <button
             type="button"
             className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
@@ -860,21 +867,15 @@ const saveSchoolName = () => {
       </div>
 
       <div className="mt-6 space-y-4">
-    {schools.map((school) => {
-    const completed = school.requirements.filter((r) => r.done).length;
-    const percent = school.requirements.length ? (completed / school.requirements.length) * 100 : 0;
-    return (
-      <div key={school.id} className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-        {/* School header */}
+      {schools.map((school) => {
+      const completed = school.requirements.filter((r) => r.done).length;
+      const percent = school.requirements.length ? (completed / school.requirements.length) * 100 : 0;
+      return (
+        <div key={school.id} className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+                {/* School header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <div>
-          {editingSchoolId === school.id ? (
-            <input autoFocus type="text" value={editingName} onChange={(event) => setEditingName(event.target.value)} onKeyDown={(event) => {
-              if (event.key === "Enter") saveSchoolName();
-              if (event.key === "Escape") setEditingSchoolId(null);
-          }}
-          className="rounded-lg border border-slate-200 px-2 py-1 text-sm font-bold text-slate-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"/>) : (<p className="text-sm font-bold text-slate-900">{school.name}</p>
-            )}
+            <p className="text-sm font-bold text-slate-900">{school.name}</p>
             <p className="text-xs text-slate-500">{school.requirements.length} requirements</p>
           </div>
           <div className="flex items-center gap-4">
@@ -889,37 +890,30 @@ const saveSchoolName = () => {
             <span className="w-40 rounded-full border border-slate-200 px-3 py-1 text-center text-xs font-semibold text-rose-600">
               {school.dueLabel}
             </span>
+
             {editingSchoolId === school.id ? (
-  <div className="flex gap-2">
-    <button
-      type="button"
-      onClick={saveSchoolName}
-      className="rounded-lg bg-emerald-700 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-800">
-      Save
-    </button>
-      <button
-        type="button"
-        onClick={() => setEditingSchoolId(null)}
-        className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-        Cancel
-      </button>
-      </div>
-       ) : (
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => startEditSchool(school)}
-            className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => deleteSchool(school.id)}
-            className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50">
-              Delete
-            </button>
-            </div>
-          )}
+              <button type="button" onClick={() => setEditingSchoolId(null)}
+                className="rounded-lg bg-emerald-700 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-800">
+                Done
+              </button>
+              ) : (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingSchoolId(school.id)}
+                  className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteSchool(school.id)}
+                  className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+                >
+                  Delete
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -951,6 +945,13 @@ const saveSchoolName = () => {
             >
               {r.done ? r.doneLabel : r.openLabel}
             </span>
+
+            {editingSchoolId === school.id && (
+            <button type="button" onClick={() => removeRequirement(school.id, r.id)}
+              className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50">
+              Remove
+            </button>
+          )}
           </label>
         ))}
       </div>
