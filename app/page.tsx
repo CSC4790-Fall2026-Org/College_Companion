@@ -156,6 +156,7 @@ export default function Home() {
   const [newTaskDate, setNewTaskDate] = useState("");
   const [newTaskType, setNewTaskType] = useState("");
   const [editingSchoolId, setEditingSchoolId] = useState<number | null>(null);
+  const [checklistSearch, setChecklistSearch] = useState("");
 
   const toggleRequirement = (schoolId: number, requirementId: number) => {
   setSchools((current) =>
@@ -235,24 +236,6 @@ export default function Home() {
       ),
     );
   };
-
-const startEditSchool = (school: School) => {
-  setEditingSchoolId(school.id);
-  setEditingName(school.name);
-};
-
-const saveSchoolName = () => {
-  const name = editingName.trim();
-
-  if (!name) {
-    return;
-  }
-
-  setSchools((current) =>
-    current.map((school) => (school.id === editingSchoolId ? { ...school, name } : school)),
-  );
-  setEditingSchoolId(null);
-};
 
   useEffect(() => {
     const savedDeadlines = window.localStorage.getItem("college-advisor-deadlines");
@@ -473,6 +456,21 @@ const saveSchoolName = () => {
     event.preventDefault();
     void sendMessage();
   };
+
+  const checklistQuery = checklistSearch.trim().toLowerCase();
+
+  const visibleSchools = schools.flatMap((school) => {
+  if (!checklistQuery || school.name.toLowerCase().includes(checklistQuery)) {
+    return [{ school, rows: school.requirements }];
+  }
+
+  const rows = school.requirements.filter((r) =>
+    `${r.title} ${r.category}`.toLowerCase().includes(checklistQuery),
+  );
+
+  return rows.length ? [{ school, rows }] : [];
+
+  });
 
   const renderContent = () => {
     const calendarYear = calendarDate.getFullYear();
@@ -839,6 +837,8 @@ const saveSchoolName = () => {
           <div className="flex items-center gap-3">
             <input
               type="search"
+              value={checklistSearch}
+              onChange={(event) => setChecklistSearch(event.target.value)}
               placeholder="Search tasks or schools"
               className="mx-auto w-full max-w-md flex-1 rounded-xl border border-slate-200 bg-white/85 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-200"/>
           <button
@@ -868,7 +868,7 @@ const saveSchoolName = () => {
       </div>
 
       <div className="mt-6 space-y-4">
-      {schools.map((school) => {
+      {visibleSchools.map(({school, rows}) => {
       const completed = school.requirements.filter((r) => r.done).length;
       const percent = school.requirements.length ? (completed / school.requirements.length) * 100 : 0;
       return (
@@ -919,7 +919,7 @@ const saveSchoolName = () => {
         </div>
 
         {/* Requirement rows */}
-        {school.requirements.map((r) => (
+        {rows.map((r) => (
           <label
             key={r.id}
             className="flex cursor-pointer items-center gap-4 border-b border-slate-100 px-4 py-3 last:border-b-0"
