@@ -690,24 +690,24 @@ export default function Home() {
 
     if (activeTab === "Resources") {
       return (
-        <section className="mt-8 rounded-[2rem] bg-gradient-to-br from-amber-50 via-yellow-50 to-rose-100 p-6 shadow-sm ring-1 ring-amber-200">
+        <section className="fade-in-up mt-8 overflow-hidden rounded-[1.75rem] border border-emerald-950/10 border-b-[3px] border-b-[#c6a45c] bg-[#28734e] p-6 text-white shadow-[0_18px_45px_rgba(40,115,78,0.22)]">
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">Your planning library</p>
-              <h2 className="mt-1 text-2xl font-black text-slate-900">Resources</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#f4e8c1]">Your planning library</p>
+              <h2 className="mt-1 text-2xl font-semibold text-white">Resources</h2>
             </div>
-            <p className="text-sm text-slate-600">{filteredResources.length} {filteredResources.length === 1 ? "resource" : "resources"}</p>
+            <p className="text-sm text-emerald-50/80">{filteredResources.length} {filteredResources.length === 1 ? "resource" : "resources"}</p>
           </div>
 
           <div className="mt-6 flex flex-col gap-3 md:flex-row">
-            <label className="flex-1 text-sm font-semibold text-slate-700">
+            <label className="flex-1 text-sm font-semibold text-emerald-50">
               Search resources
               <input
                 type="search"
                 value={resourceSearch}
                 onChange={(event) => setResourceSearch(event.target.value)}
                 placeholder="Search scholarships, FAFSA, applications..."
-                className="mt-1 w-full rounded-xl border border-amber-200 bg-white/85 px-3 py-2 font-normal text-slate-700 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-200"
+                className="mt-1 w-full rounded-xl border border-emerald-950/15 bg-white px-3 py-2 font-normal text-slate-900 placeholder:text-slate-500 outline-none transition focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
               />
             </label>
           </div>
@@ -720,8 +720,8 @@ export default function Home() {
                 onClick={() => setResourceCategory(category)}
                 className={`rounded-full px-3 py-2 text-xs font-bold transition ${
                   resourceCategory === category
-                    ? "bg-slate-900 text-white shadow-sm"
-                    : "bg-white/80 text-slate-600 ring-1 ring-amber-200 hover:bg-white"
+                    ? "bg-[#f4e8c1] text-emerald-950 shadow-sm"
+                    : "border border-white/25 bg-white/10 text-emerald-50/90 hover:bg-white/20 hover:text-white"
                 }`}
               >
                 {category}
@@ -730,32 +730,26 @@ export default function Home() {
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {filteredResources.map((resource, index) => (
+            {filteredResources.map((resource) => (
               <a
                 key={resource.title}
                 href={resource.href}
                 target="_blank"
                 rel="noreferrer"
-                className={`group rounded-[1.5rem] p-4 shadow-sm ring-1 transition hover:-translate-y-1 hover:shadow-lg ${
-                  index % 3 === 0
-                    ? "bg-gradient-to-br from-pink-200 to-orange-100 ring-pink-200"
-                    : index % 3 === 1
-                      ? "bg-gradient-to-br from-sky-200 to-cyan-100 ring-sky-200"
-                      : "bg-gradient-to-br from-violet-200 to-fuchsia-100 ring-violet-200"
-                }`}
+                className="group rounded-[1.25rem] border border-[#c6a45c]/50 bg-[#f4eee2] p-4 text-slate-800 shadow-sm transition hover:-translate-y-1 hover:bg-white hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f4e8c1]"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <span className="rounded-full bg-white/70 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-600">{resource.category}</span>
+                  <span className="rounded-lg bg-[#28734e]/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-900">{resource.category}</span>
                 </div>
-                <h3 className="mt-4 text-lg font-black text-slate-900">{resource.title}</h3>
+                <h3 className="mt-4 text-lg font-semibold text-emerald-950">{resource.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-700">{resource.description}</p>
-                <p className="mt-4 text-xs font-bold text-slate-500">Open official resource</p>
+                <p className="mt-4 text-xs font-semibold text-emerald-800">Open official resource</p>
               </a>
             ))}
           </div>
 
           {filteredResources.length === 0 && (
-            <p className="mt-6 rounded-2xl bg-white/75 px-4 py-8 text-center text-sm text-slate-600">No resources match that search. Try another topic or choose All.</p>
+            <p className="mt-6 rounded-2xl border border-white/15 bg-white/10 px-4 py-8 text-center text-sm text-white/85">No resources match that search. Try another topic or choose All.</p>
           )}
         </section>
       );
@@ -763,25 +757,25 @@ export default function Home() {
 
     if (activeTab === "Visualizations") {
       return (
-        <section className="fade-in-up mt-8 rounded-[2rem] bg-gradient-to-br from-violet-100 via-fuchsia-50 to-cyan-100 p-6 shadow-sm ring-1 ring-violet-200">
-          <div className="mb-6 flex items-center justify-between">
+        <section className="fade-in-up mt-8 overflow-hidden rounded-[1.75rem] border border-emerald-950/10 border-b-[3px] border-b-[#c6a45c] bg-[#28734e] p-6 text-white shadow-[0_18px_45px_rgba(40,115,78,0.22)]">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600">Visualizations</p>
-              <h2 className="mt-1 text-2xl font-black text-slate-900">Fun ways to track your college journey</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#f4e8c1]">Visualizations</p>
+              <h2 className="mt-1 text-2xl font-semibold text-white">Fun ways to track your college journey</h2>
             </div>
-            <button className="rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-violet-200">
+            <button className="rounded-lg bg-[#f4e8c1] px-4 py-2 text-sm font-semibold text-emerald-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f4e8c1]">
               Refresh insights
             </button>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-[1.5rem] bg-gradient-to-br from-white to-violet-50 p-5 shadow-sm ring-1 ring-violet-200">
-              <h3 className="text-lg font-bold text-slate-900">School fit meter</h3>
+            <div className="rounded-[1.25rem] border border-[#c6a45c]/50 bg-[#f4eee2] p-5 text-slate-800 shadow-sm">
+              <h3 className="text-lg font-semibold text-emerald-950">School fit meter</h3>
               <div className="mt-5 flex items-center gap-5">
                 <div
-                  className="flex h-28 w-28 items-center justify-center rounded-full text-xl font-black text-slate-900"
+                  className="flex h-28 w-28 items-center justify-center rounded-full text-xl font-semibold text-emerald-950"
                   style={{
-                    background: "conic-gradient(#8b5cf6 0 82%, #e2e8f0 82% 100%)",
+                    background: "conic-gradient(#28734e 0 82%, #d9dfd5 82% 100%)",
                   }}
                 >
                   <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white">
@@ -789,7 +783,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="space-y-2 text-sm text-slate-600">
+                <div className="space-y-2 text-sm text-slate-700">
                   <p>Best fit schools: 6</p>
                   <p>Reach schools: 2</p>
                   <p>Safety schools: 3</p>
@@ -797,8 +791,8 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="rounded-[1.5rem] bg-gradient-to-br from-white to-cyan-50 p-5 shadow-sm ring-1 ring-cyan-200">
-              <h3 className="text-lg font-bold text-slate-900">Application progress</h3>
+            <div className="rounded-[1.25rem] border border-[#c6a45c]/50 bg-[#f4eee2] p-5 text-slate-800 shadow-sm">
+              <h3 className="text-lg font-semibold text-emerald-950">Application progress</h3>
               <div className="mt-5 space-y-4">
                 {[
                   ["Essays", 80],
@@ -806,13 +800,13 @@ export default function Home() {
                   ["Scholarships", 55],
                 ].map(([label, value]) => (
                   <div key={label}>
-                    <div className="mb-1 flex justify-between text-sm text-slate-600">
+                    <div className="mb-1 flex justify-between text-sm text-slate-700">
                       <span>{label}</span>
                       <span>{value}%</span>
                     </div>
-                    <div className="h-2.5 rounded-full bg-slate-200">
+                    <div className="h-2.5 rounded-full bg-emerald-950/10">
                       <div
-                        className="h-2.5 rounded-full bg-gradient-to-r from-sky-500 to-violet-500"
+                        className="h-2.5 rounded-full bg-[#28734e]"
                         style={{ width: `${value}%` }}
                       />
                     </div>
@@ -821,8 +815,8 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="rounded-[1.5rem] bg-gradient-to-br from-white to-fuchsia-50 p-5 shadow-sm ring-1 ring-fuchsia-200 md:col-span-2">
-              <h3 className="text-lg font-bold text-slate-900">Deadline timeline</h3>
+            <div className="rounded-[1.25rem] border border-[#c6a45c]/50 bg-[#f4eee2] p-5 text-slate-800 shadow-sm md:col-span-2">
+              <h3 className="text-lg font-semibold text-emerald-950">Deadline timeline</h3>
               <div className="mt-5 grid gap-4 md:grid-cols-4">
                 {[
                   { month: "Sep", value: 40, label: "Essay review" },
@@ -830,14 +824,14 @@ export default function Home() {
                   { month: "Nov", value: 90, label: "Scholarships" },
                   { month: "Dec", value: 50, label: "Decisions" },
                 ].map((item) => (
-                  <div key={item.month} className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-200">
+                  <div key={item.month} className="rounded-xl border border-emerald-900/10 bg-white p-3 shadow-sm">
                     <div className="flex h-24 items-end">
                       <div
-                        className="w-full rounded-t-2xl bg-gradient-to-t from-violet-500 to-sky-400"
+                        className="w-full rounded-t-xl bg-[#28734e]"
                         style={{ height: `${item.value}%` }}
                       />
                     </div>
-                    <p className="mt-3 text-center text-sm font-bold text-slate-700">{item.month}</p>
+                    <p className="mt-3 text-center text-sm font-semibold text-emerald-950">{item.month}</p>
                     <p className="text-center text-xs text-slate-500">{item.label}</p>
                   </div>
                 ))}
@@ -851,22 +845,25 @@ export default function Home() {
 
     if (activeTab === "Checklist") {
       return (
-       <section className="fade-in-up mt-8 rounded-[2rem] bg-gradient-to-br from-emerald-50 via-white to-sky-100 p-6 shadow-sm ring-1 ring-emerald-200">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-black text-slate-900">College Companion Checklist</h2>
-          <div className="flex items-center gap-3">
+       <section className="fade-in-up mt-8 overflow-hidden rounded-[1.75rem] border border-emerald-950/10 border-b-[3px] border-b-[#c6a45c] bg-[#28734e] p-6 text-white shadow-[0_18px_45px_rgba(40,115,78,0.22)]">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#f4e8c1]">Stay organized</p>
+            <h2 className="mt-1 text-2xl font-semibold text-white">College Companion Checklist</h2>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             <input
               type="search"
               value={checklistSearch}
               onChange={(event) => setChecklistSearch(event.target.value)}
               placeholder="Search tasks or schools"
-              className="mx-auto w-full max-w-md flex-1 rounded-xl border border-slate-200 bg-white/85 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-200"/>
+              className="w-full rounded-xl border border-emerald-900/15 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-500 outline-none transition focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1] sm:w-56"/>
           
 
           <button
             type="button"
             onClick={() => window.print()}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+            className="rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f4e8c1]"
           >
             Print
           </button>
@@ -874,7 +871,7 @@ export default function Home() {
           <button
             type="button"
             onClick={() => setShowAddSchool(true)}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+            className="rounded-lg bg-[#f4e8c1] px-4 py-2 text-sm font-semibold text-emerald-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f4e8c1]"
           >
             Add school
           </button>
@@ -887,29 +884,29 @@ export default function Home() {
       const completed = school.requirements.filter((r) => r.done).length;
       const percent = school.requirements.length ? (completed / school.requirements.length) * 100 : 0;
       return (
-        <div key={school.id} className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+        <div key={school.id} className="overflow-hidden rounded-2xl border border-[#c6a45c]/50 bg-[#f4eee2] text-slate-800 shadow-sm">
                 {/* School header */}
-        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+        <div className="flex flex-col gap-3 border-b border-emerald-900/10 bg-white/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-bold text-slate-900">{school.name}</p>
+            <p className="text-sm font-semibold text-emerald-950">{school.name}</p>
             <p className="text-xs text-slate-500">{school.requirements.length} requirements</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3">
             <div
               className="flex h-10 w-10 items-center justify-center rounded-full"
-              style={{ background: `conic-gradient(#047857 0 ${percent}%, #e2e8f0 ${percent}% 100%)` }}
+              style={{ background: `conic-gradient(#28734e 0 ${percent}%, #d9dfd5 ${percent}% 100%)` }}
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[10px] font-bold text-slate-700">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[10px] font-bold text-emerald-950">
                 {completed}/{school.requirements.length}
               </div>
             </div>
-            <span className="w-40 rounded-full border border-slate-200 px-3 py-1 text-center text-xs font-semibold text-rose-600">
+            <span className="rounded-lg bg-[#f4e8c1] px-3 py-1 text-center text-xs font-semibold text-emerald-950">
               {school.dueLabel}
             </span>
 
             {editingSchoolId === school.id ? (
               <button type="button" onClick={() => setEditingSchoolId(null)}
-                className="rounded-lg bg-emerald-700 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-800">
+                className="rounded-lg bg-[#28734e] px-3 py-1 text-xs font-semibold text-white hover:bg-[#205b3e]">
                 Done
               </button>
               ) : (
@@ -917,14 +914,14 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setEditingSchoolId(school.id)}
-                  className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  className="rounded-lg border border-emerald-900/20 bg-white px-3 py-1 text-xs font-semibold text-emerald-900 hover:bg-emerald-50"
                 >
                   Edit
                 </button>
                 <button
                   type="button"
                   onClick={() => deleteSchool(school.id)}
-                  className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+                  className="rounded-lg border border-rose-200 bg-white px-3 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50"
                 >
                   Delete
                 </button>
@@ -937,26 +934,26 @@ export default function Home() {
         {rows.map((r) => (
           <label
             key={r.id}
-            className="flex cursor-pointer items-center gap-4 border-b border-slate-100 px-4 py-3 last:border-b-0"
+            className="flex cursor-pointer items-center gap-4 border-b border-emerald-900/10 px-4 py-3 last:border-b-0 hover:bg-white/60"
           >
             <input
               type="checkbox"
               checked={r.done}
               onChange={() => toggleRequirement(school.id, r.id)}
-              className="h-4 w-4 accent-emerald-700"
+              className="h-4 w-4 accent-[#28734e]"
             />
             <div className="flex-1">
-              <p className={`text-sm font-semibold ${r.done ? "text-slate-400" : "text-slate-900"}`}>{r.title}</p>
+              <p className={`text-sm font-semibold ${r.done ? "text-slate-400" : "text-emerald-950"}`}>{r.title}</p>
               <p className="text-xs text-slate-400">{r.category}</p>
             </div>
             <span className="text-xs text-slate-500">{r.date}</span>
             <span
               className={`w-24 rounded-full px-3 py-1 text-center text-xs font-semibold ${
                 r.done
-                  ? "bg-emerald-50 text-emerald-700"
+                  ? "bg-[#28734e] text-white"
                   : r.openLabel === "Due today"
                     ? "bg-rose-50 text-rose-600"
-                    : "bg-slate-100 text-slate-500"
+                    : "bg-white text-slate-600"
               }`}
             >
               {r.done ? "Complete" : r.openLabel}
@@ -964,7 +961,7 @@ export default function Home() {
 
             {editingSchoolId === school.id && (
             <button type="button" onClick={() => removeRequirement(school.id, r.id)}
-              className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50">
+              className="rounded-lg border border-rose-200 bg-white px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50">
               Remove
             </button>
           )}
@@ -976,32 +973,32 @@ export default function Home() {
       </div>
         {showAddSchool && (
   <div
-    className="fixed inset-0 z-50 flex items-center justify-center"
+    className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-950/50 p-4 backdrop-blur-sm"
     onClick={closeAddSchool}
   >
     <div
-      className="h-[48rem] max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl ring-1 ring-slate-200"
+      className="h-[48rem] max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-[#c6a45c]/50 bg-[#f4eee2] p-6 text-slate-800 shadow-xl"
       onClick={(event) => event.stopPropagation()}
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-slate-900">Add a school</h2>
+        <h2 className="text-xl font-semibold text-emerald-950">Add a school</h2>
         <button
           type="button"
           onClick={closeAddSchool}
           aria-label="Close"
-          className="rounded-full px-3 py-1 text-lg font-semibold text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
+          className="rounded-lg px-3 py-1 text-lg font-semibold text-emerald-800 transition hover:bg-emerald-900/10 hover:text-emerald-950"
         >
           ✕
         </button>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
-        <div className="border-b border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">
+      <div className="mt-4 overflow-hidden rounded-xl border border-emerald-900/15 bg-white/60">
+        <div className="border-b border-emerald-900/10 px-4 py-3 text-sm font-semibold text-emerald-950">
           School details
         </div>
 
         <div className="space-y-4 px-4 py-4">
-          <label className="block text-xs font-semibold text-slate-700">
+          <label className="block text-xs font-semibold text-emerald-950">
             School name <span className="text-rose-500">*</span>
             <input
               type="text"
@@ -1012,8 +1009,8 @@ export default function Home() {
               }}
 
               placeholder="e.g. Northbridge University"
-              className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm font-normal text-slate-700 outline-none focus:ring-2 ${
-                addSchoolError ? "border-rose-400 focus:border-rose-500 focus:ring-rose-100" : "border-slate-200 focus:border-emerald-600 focus:ring-emerald-100"}`}/>
+              className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:ring-2 ${
+                addSchoolError ? "border-rose-400 focus:border-rose-500 focus:ring-rose-100" : "border-emerald-900/15 focus:border-[#c6a45c] focus:ring-[#f4e8c1]"}`}/>
             
               {addSchoolError && (
                 <span className="mt-1 block text-xs font-normal text-rose-600">{addSchoolError}</span>
@@ -1021,12 +1018,12 @@ export default function Home() {
           </label>
 
           <div className="grid grid-cols-2 gap-3">
-            <label className="block text-xs font-semibold text-slate-700">
+            <label className="block text-xs font-semibold text-emerald-950">
               Application Type
               <select
                 value={newAppType}
                 onChange={(event) => setNewAppType(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-700 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                className="mt-1 w-full rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
               >
                 <option value="">Select an application type</option>
                 <option>Common Application</option>
@@ -1034,47 +1031,47 @@ export default function Home() {
                 <option>Direct application</option>
               </select>
             </label>
-            <label className="block text-xs font-semibold text-slate-700">
+            <label className="block text-xs font-semibold text-emerald-950">
               Application Due Date
               <input
                 type="date"
                 value={newAppDueDate}
                 onChange={(event) => setNewAppDueDate(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                className="mt-1 w-full rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
               />
             </label>
           </div>
 
           <div className="space-y-4 pt-2">
-            <p className="text-sm font-semibold text-slate-900">New task</p>
+            <p className="text-sm font-semibold text-emerald-950">New task</p>
 
-            <label className="block text-xs font-semibold text-slate-700">
+            <label className="block text-xs font-semibold text-emerald-950">
               Task name
               <input
                 type="text"
                 value={newTaskName}
                 onChange={(event) => setNewTaskName(event.target.value)}
                 placeholder="e.g. Review application packet"
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                className="mt-1 w-full rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
               />
             </label>
 
-            <label className="block text-xs font-semibold text-slate-700">
+            <label className="block text-xs font-semibold text-emerald-950">
               Task due date
               <input
                 type="date"
                 value={newTaskDate}
                 onChange={(event) => setNewTaskDate(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                className="mt-1 w-full rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
               />
             </label>
 
-            <label className="block text-xs font-semibold text-slate-700">
+            <label className="block text-xs font-semibold text-emerald-950">
               Task type
               <select
                 value={newTaskType}
                 onChange={(event) => setNewTaskType(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-700 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                className="mt-1 w-full rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
               >
                 <option value="">Select a task type</option>
                 <option>Application</option>
@@ -1088,13 +1085,13 @@ export default function Home() {
             <div className="flex justify-end gap-2">
               <button
                 type="button"
-                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="rounded-lg border border-emerald-900/20 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-50"
               >
                 Upload task
               </button>
               <button
                 type="button"
-                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="rounded-lg border border-emerald-900/20 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-50"
               >
                 Add another task
               </button>
@@ -1102,12 +1099,12 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="border-t border-slate-200 p-3">
+        <div className="border-t border-emerald-900/10 p-3">
           <button
             type="button"
             onClick={handleAddSchool}
             disabled={!newSchoolName.trim()}
-            className="w-full rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-lg bg-[#28734e] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#205b3e] disabled:cursor-not-allowed disabled:opacity-50"
           >
             + Add school
           </button>
@@ -1121,23 +1118,23 @@ export default function Home() {
 }
 
     return (
-      <section className="mt-8 rounded-[2rem] bg-gradient-to-br from-rose-50 via-white to-sky-50 p-6 shadow-sm ring-1 ring-sky-200">
+      <section className="fade-in-up mt-8 overflow-hidden rounded-[1.75rem] border border-emerald-950/10 border-b-[3px] border-b-[#c6a45c] bg-[#28734e] p-6 text-white shadow-[0_18px_45px_rgba(40,115,78,0.22)]">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose-600">Stay on track</p>
-            <h2 className="mt-1 text-2xl font-black text-slate-900">Deadlines</h2>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#f4e8c1]">Stay on track</p>
+            <h2 className="mt-1 text-2xl font-semibold text-white">Deadlines</h2>
           </div>
-          <p className="text-sm text-slate-600">{deadlines.length} {deadlines.length === 1 ? "deadline" : "deadlines"}</p>
+          <p className="text-sm text-emerald-50/80">{deadlines.length} {deadlines.length === 1 ? "deadline" : "deadlines"}</p>
         </div>
 
-        <div className="mt-5 inline-flex rounded-xl bg-white/80 p-1 ring-1 ring-slate-200">
+        <div className="mt-5 inline-flex rounded-xl border border-white/15 bg-white/10 p-1">
           {(["list", "calendar"] as const).map((view) => (
             <button
               key={view}
               type="button"
               onClick={() => setDeadlineView(view)}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition ${
-                deadlineView === view ? "bg-slate-900 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"
+              className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f4e8c1] ${
+                deadlineView === view ? "bg-[#f4e8c1] text-emerald-950 shadow-sm" : "text-emerald-50/90 hover:bg-white/10 hover:text-white"
               }`}
             >
               {view}
@@ -1145,46 +1142,42 @@ export default function Home() {
           ))}
         </div>
 
-        <form onSubmit={handleAddDeadline} className="mt-6 grid gap-3 rounded-2xl bg-white/80 p-4 ring-1 ring-slate-200 md:grid-cols-[1fr_auto_auto] md:items-end">
-          <label className="text-sm font-semibold text-slate-700">
+        <form onSubmit={handleAddDeadline} className="mt-6 grid gap-3 rounded-2xl border border-[#c6a45c]/50 bg-[#f4eee2] p-4 md:grid-cols-[1fr_auto_auto] md:items-end">
+          <label className="text-sm font-semibold text-emerald-950">
             What is due?
-            <input type="text" value={deadlineTitle} onChange={(event) => setDeadlineTitle(event.target.value)} placeholder="e.g. Submit FAFSA" maxLength={100} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-normal text-slate-700 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-200" required />
+            <input type="text" value={deadlineTitle} onChange={(event) => setDeadlineTitle(event.target.value)} placeholder="e.g. Submit FAFSA" maxLength={100} className="mt-1 w-full rounded-xl border border-emerald-900/15 bg-white px-3 py-2 font-normal text-slate-900 placeholder:text-slate-500 outline-none transition focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]" required />
           </label>
-          <label className="text-sm font-semibold text-slate-700">
+          <label className="text-sm font-semibold text-emerald-950">
             Due date
-            <input type="date" value={deadlineDate} onChange={(event) => setDeadlineDate(event.target.value)} className="mt-1 rounded-xl border border-slate-200 bg-white px-3 py-2 font-normal text-slate-700 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-200" required />
+            <input type="date" value={deadlineDate} onChange={(event) => setDeadlineDate(event.target.value)} className="mt-1 rounded-xl border border-emerald-900/15 bg-white px-3 py-2 font-normal text-slate-900 outline-none transition focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]" required />
           </label>
-          <button type="submit" className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700">Add deadline</button>
+          <button type="submit" className="rounded-lg bg-[#28734e] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#205b3e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700">Add deadline</button>
         </form>
 
         {deadlineView === "list" ? (
           <div className="mt-6 space-y-3">
-            {deadlines.map((deadline, index) => (
+            {deadlines.map((deadline) => (
               <div
                 key={deadline.id}
-                className={`flex items-center justify-between rounded-2xl px-4 py-3 shadow-sm ring-1 ${
-                  index % 2 === 0
-                    ? "bg-gradient-to-r from-rose-100 to-orange-50 ring-rose-200"
-                    : "bg-gradient-to-r from-sky-100 to-violet-50 ring-sky-200"
-                }`}
+                className="flex items-center justify-between gap-3 rounded-xl border border-[#c6a45c]/50 bg-[#f4eee2] px-4 py-3 text-slate-800 shadow-sm"
               >
-                <span className="text-slate-700">{deadline.title}</span>
+                <span>{deadline.title}</span>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-slate-900 px-2 py-1 text-xs font-bold text-white">{formatDeadlineDate(deadline.date)}</span>
-                  <button type="button" onClick={() => setDeadlines((current) => current.filter((item) => item.id !== deadline.id))} className="rounded-full px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-white hover:text-rose-600" aria-label={`Remove ${deadline.title}`}>Remove</button>
+                  <span className="rounded-lg bg-[#28734e] px-2 py-1 text-xs font-bold text-white">{formatDeadlineDate(deadline.date)}</span>
+                  <button type="button" onClick={() => setDeadlines((current) => current.filter((item) => item.id !== deadline.id))} className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-white hover:text-rose-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700" aria-label={`Remove ${deadline.title}`}>Remove</button>
                 </div>
               </div>
             ))}
-            {deadlines.length === 0 && <p className="rounded-2xl bg-white/70 px-4 py-6 text-center text-sm text-slate-500">No deadlines yet. Add one above to get started.</p>}
+            {deadlines.length === 0 && <p className="rounded-xl border border-white/15 bg-white/10 px-4 py-6 text-center text-sm text-white/85">No deadlines yet. Add one above to get started.</p>}
           </div>
         ) : (
-          <div className="mt-6 rounded-2xl bg-white/75 p-4 ring-1 ring-slate-200">
+          <div className="mt-6 rounded-2xl border border-[#c6a45c]/50 bg-[#f4eee2] p-4">
             <div className="mb-4 flex items-center justify-between">
-              <button type="button" onClick={() => shiftCalendarMonth(-1)} className="rounded-lg px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100" aria-label="Previous month">&lt;</button>
-              <h3 className="text-lg font-black text-slate-900">
+              <button type="button" onClick={() => shiftCalendarMonth(-1)} className="rounded-lg px-3 py-2 text-sm font-bold text-emerald-900 transition hover:bg-emerald-900/10 focus-visible:outline-2 focus-visible:outline-emerald-700" aria-label="Previous month">&lt;</button>
+              <h3 className="text-lg font-semibold text-emerald-950">
                 {new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(calendarDate)}
               </h3>
-              <button type="button" onClick={() => shiftCalendarMonth(1)} className="rounded-lg px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100" aria-label="Next month">&gt;</button>
+              <button type="button" onClick={() => shiftCalendarMonth(1)} className="rounded-lg px-3 py-2 text-sm font-bold text-emerald-900 transition hover:bg-emerald-900/10 focus-visible:outline-2 focus-visible:outline-emerald-700" aria-label="Next month">&gt;</button>
             </div>
 
             <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold uppercase tracking-wide text-slate-400">
@@ -1196,13 +1189,13 @@ export default function Home() {
                 const dayDeadlines = deadlines.filter((deadline) => deadline.date === dateKey);
 
                 return (
-                  <div key={day === null ? `empty-${index}` : dateKey} className={`min-h-24 rounded-xl p-2 text-left ring-1 ${day === null ? "bg-slate-50/60 ring-transparent" : "bg-white ring-slate-200"}`}>
+                  <div key={day === null ? `empty-${index}` : dateKey} className={`min-h-24 rounded-xl p-2 text-left ring-1 ${day === null ? "bg-emerald-900/[0.03] ring-transparent" : "bg-white ring-emerald-900/10"}`}>
                     {day !== null && (
                       <>
-                        <span className="text-sm font-bold text-slate-700">{day}</span>
+                        <span className="text-sm font-bold text-emerald-950">{day}</span>
                         <div className="mt-1 space-y-1">
                           {dayDeadlines.map((deadline) => (
-                            <div key={deadline.id} className="rounded-md bg-gradient-to-r from-rose-400 to-violet-500 px-1.5 py-1 text-[10px] font-bold leading-tight text-white" title={deadline.title}>
+                            <div key={deadline.id} className="rounded-md bg-[#28734e] px-1.5 py-1 text-[10px] font-semibold leading-tight text-white" title={deadline.title}>
                               {deadline.title}
                             </div>
                           ))}
