@@ -1213,7 +1213,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#e9e7df] px-6 py-8">
+    <main className="min-h-screen bg-[#e1f0df] px-6 py-8">
       <div className="relative mx-auto max-w-5xl">
         <header className="overflow-hidden rounded-[1.75rem] border border-emerald-950/10 border-b-[3px] border-b-[#c6a45c] bg-[#28734e] text-white shadow-[0_18px_45px_rgba(40,115,78,0.22)]">
           <div className="flex flex-col gap-4 border-b border-white/15 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
