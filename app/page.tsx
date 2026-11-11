@@ -1,6 +1,7 @@
 "use client";
 import { Show, SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
+import Image from "next/image";
 import { Suspense, startTransition, type FormEvent, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -120,11 +121,7 @@ const defaultSchools: School[] = [
 const initialChatMessages: ChatMessage[] = [
   {
     sender: "bot",
-    text: "Hi! I can help with college planning, application strategy, and deadline tracking.",
-  },
-  {
-    sender: "bot",
-    text: "Try asking about scholarships, essay timing, school lists, or upcoming dates.",
+    text: "Hi! I can help with college planning, application strategy, and deadline tracking. Try asking about scholarships, essay timing, school lists, or upcoming dates.",
   },
 ];
 
@@ -468,6 +465,16 @@ export default function Home() {
     void sendMessage();
   };
 
+  const startNewChat = () => {
+    if (isSending) {
+      return;
+    }
+
+    setChatMessages([...initialChatMessages]);
+    setChatInput("");
+    setChatError("");
+  };
+
   const checklistQuery = checklistSearch.trim().toLowerCase();
 
   const visibleSchools = schools.flatMap((school) => {
@@ -496,18 +503,15 @@ export default function Home() {
     if (activeTab === "Home") {
       return (
         <section className="fade-in-up mt-8">
-          <div className="overflow-hidden rounded-[2rem] bg-white/35 p-[1px] shadow-[0_25px_80px_rgba(99,102,241,0.2)] backdrop-blur-md">
-            <div className="rounded-[calc(2rem-1px)] bg-white/15 p-6 text-slate-900 shadow-inner backdrop-blur-md md:p-8">
+          <div className="overflow-hidden rounded-[1.75rem] border border-emerald-950/10 border-b-[3px] border-b-[#c6a45c] bg-[#28734e] text-white shadow-[0_18px_45px_rgba(40,115,78,0.22)]">
+            <div className="p-6 md:p-8">
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-800">
+                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#f4e8c1]">
                     Your college orbit
                   </p>
-                  <h2 className="mt-2 text-3xl font-black md:text-5xl">Hello{accountName ? `, ${accountName}` : ""}</h2>
+                  <h2 className="mt-2 text-3xl font-semibold md:text-5xl">Hello{accountName ? `, ${accountName}` : ""}</h2>
                 </div>
-                <button className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:scale-[1.02]">
-                  New task
-                </button>
               </div>
 
               <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -516,24 +520,24 @@ export default function Home() {
                     label: "Applications",
                     value: schools.length,
                     note: `${completedRequirements} of ${totalRequirements} checklist items complete`,
-                    tone: "bg-emerald-400/20 text-emerald-950",
+                    tone: "bg-white/10 text-white",
                   },
                   {
                     label: "Tracked deadlines",
                     value: deadlines.length,
                     note: `${overdueDeadlines.length} overdue · ${upcomingDeadlines.length} upcoming`,
-                    tone: "bg-amber-400/20 text-amber-950",
+                    tone: "bg-white/10 text-white",
                   },
                   {
                     label: "Planning resources",
                     value: resources.length,
                     note: "Available in Resources",
-                    tone: "bg-sky-400/20 text-sky-950",
+                    tone: "bg-white/10 text-white",
                   },
                 ].map((card) => (
-                  <div key={card.label} className={`card-lift rounded-2xl border border-white/10 p-4 ${card.tone}`}>
+                  <div key={card.label} className={`card-lift rounded-2xl border border-white/15 p-4 ${card.tone}`}>
                     <p className="text-sm opacity-75">{card.label}</p>
-                    <p className="mt-2 text-3xl font-black">{card.value}</p>
+                    <p className="mt-2 text-3xl font-semibold">{card.value}</p>
                     <p className="mt-1 text-sm opacity-80">{card.note}</p>
                   </div>
                 ))}
@@ -542,31 +546,31 @@ export default function Home() {
           </div>
 
           <div className="mt-8 grid gap-6 md:grid-cols-2">
-            <div className="card-lift rounded-[2rem] bg-gradient-to-br from-pink-100 via-rose-50 to-orange-100 p-5 shadow-sm ring-1 ring-pink-200">
-              <h3 className="text-xl font-bold text-slate-900">Your deadlines</h3>
-              <ul className="mt-4 space-y-3 text-sm text-slate-700">
-                {dashboardDeadlines.map((deadline, index) => {
+            <div className="card-lift rounded-[1.75rem] border border-emerald-950/10 border-b-[3px] border-b-[#c6a45c] bg-[#28734e] p-5 text-white shadow-[0_18px_45px_rgba(40,115,78,0.18)]">
+              <h3 className="text-xl font-semibold">Your deadlines</h3>
+              <ul className="mt-4 space-y-3 text-sm text-white/90">
+                {dashboardDeadlines.map((deadline) => {
                   const isOverdue = deadline.date < todayKey;
 
                   return (
-                  <li key={deadline.id} className="flex items-center justify-between rounded-2xl bg-white/80 px-3 py-2 shadow-sm">
+                  <li key={deadline.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/15 bg-white/10 px-3 py-2">
                     <span>{deadline.title}</span>
-                    <span className={`rounded-full px-2 py-1 text-xs font-bold text-white ${isOverdue ? "bg-rose-600" : index % 2 === 0 ? "bg-pink-500" : "bg-amber-500"}`}>
+                    <span className={`shrink-0 rounded-lg px-2 py-1 text-xs font-bold ${isOverdue ? "bg-rose-600 text-white" : "bg-[#f4e8c1] text-emerald-950"}`}>
                       {isOverdue ? `Overdue · ${formatDeadlineDate(deadline.date)}` : deadline.date === todayKey ? "Due today" : formatDeadlineDate(deadline.date)}
                     </span>
                   </li>
                   );
                 })}
                 {deadlines.length === 0 && (
-                  <li className="rounded-2xl bg-white/80 px-3 py-4 text-slate-600 shadow-sm">
+                  <li className="rounded-xl border border-white/15 bg-white/10 px-3 py-4 text-white/80">
                     No deadlines yet. Add one in the Deadlines tab.
                   </li>
                 )}
               </ul>
             </div>
 
-            <div className="card-lift rounded-[2rem] bg-gradient-to-br from-cyan-100 via-sky-50 to-violet-100 p-5 shadow-sm ring-1 ring-cyan-200">
-              <h3 className="text-xl font-bold text-slate-900">Helpful resources</h3>
+            <div className="card-lift rounded-[1.75rem] border border-emerald-950/10 border-b-[3px] border-b-[#c6a45c] bg-[#28734e] p-5 text-white shadow-[0_18px_45px_rgba(40,115,78,0.18)]">
+              <h3 className="text-xl font-semibold">Helpful resources</h3>
               <div className="mt-4 space-y-3">
                 {resources.slice(0, 3).map((resource) => (
                   <a
@@ -574,10 +578,10 @@ export default function Home() {
                     href={resource.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="block rounded-2xl bg-white/80 px-3 py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-white"
+                    className="block rounded-xl border border-white/15 bg-white/10 px-3 py-3 text-sm font-medium text-white/90 transition-colors hover:bg-white/20 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f4e8c1]"
                   >
                     <span className="block">{resource.title}</span>
-                    <span className="mt-1 block text-xs font-normal text-slate-500">{resource.category}</span>
+                    <span className="mt-1 block text-xs font-normal text-emerald-100/70">{resource.category}</span>
                   </a>
                 ))}
               </div>
@@ -589,26 +593,31 @@ export default function Home() {
 
     if (activeTab === "College Chat") {
       return (
-        <section className="fade-in-up mt-8 rounded-[2rem] bg-gradient-to-br from-sky-100 via-white to-fuchsia-100 p-6 shadow-sm ring-1 ring-sky-200">
+        <section className="fade-in-up mt-8 overflow-hidden rounded-[1.75rem] border border-emerald-950/10 border-b-[3px] border-b-[#c6a45c] bg-[#28734e] p-6 text-white shadow-[0_18px_45px_rgba(40,115,78,0.22)]">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-violet-600">College Chat</p>
-              <h2 className="mt-1 text-2xl font-black text-slate-900">Ask about applications, scholarships, and deadlines</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#f4e8c1]">College Chat</p>
+              <h2 className="mt-1 text-2xl font-semibold text-white">Ask about applications, scholarships, and deadlines</h2>
             </div>
-            <button className="rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-violet-200">
+            <button
+              type="button"
+              onClick={startNewChat}
+              disabled={isSending}
+              className="rounded-lg bg-[#f4e8c1] px-4 py-2 text-sm font-bold text-emerald-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f4e8c1] disabled:cursor-not-allowed disabled:opacity-60"
+            >
               Start new chat
             </button>
           </div>
 
-          <div className="rounded-[1.5rem] border border-sky-200 bg-white/70 p-4 backdrop-blur">
+          <div className="rounded-[1.5rem] border border-[#c6a45c]/50 bg-[#f4eee2] p-4">
             <div className="space-y-3">
               {chatMessages.map((message, index) => (
                 <div key={`${message.sender}-${index}`} className={message.sender === "user" ? "ml-auto max-w-xl" : "max-w-xl"}>
                   <div
                     className={`rounded-2xl px-4 py-3 text-sm ${
                       message.sender === "bot"
-                        ? "bg-gradient-to-r from-slate-100 to-sky-50 text-slate-700 ring-1 ring-slate-200"
-                        : "bg-gradient-to-r from-sky-500 to-violet-500 text-white"
+                        ? "border border-emerald-900/10 bg-white text-slate-800 shadow-sm"
+                        : "bg-[#28734e] text-white shadow-sm"
                     }`}
                   >
                     {message.sender === "bot" ? (
@@ -631,7 +640,7 @@ export default function Home() {
                           href={citation.uri}
                           target="_blank"
                           rel="noreferrer"
-                          className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky-700 ring-1 ring-sky-200 transition hover:bg-sky-50"
+                          className="rounded-lg border border-emerald-900/15 bg-white px-3 py-1 text-xs font-semibold text-emerald-900 transition-colors hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
                         >
                           {citation.title}
                         </a>
@@ -649,31 +658,31 @@ export default function Home() {
                   type="button"
                   onClick={() => void sendMessage(prompt)}
                   disabled={isSending}
-                  className="rounded-full border border-violet-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-violet-400 hover:bg-violet-50"
+                  className="rounded-lg border border-emerald-900/20 bg-white/55 px-3 py-2 text-xs font-semibold text-emerald-900/55 transition-colors hover:bg-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {prompt}
                 </button>
               ))}
             </div>
 
-            <form onSubmit={handleChatSubmit} className="mt-5 flex items-center gap-3 rounded-2xl bg-slate-100 p-3 ring-1 ring-slate-200">
+            <form onSubmit={handleChatSubmit} className="mt-5 flex items-center gap-3 rounded-2xl border border-emerald-900/15 bg-white p-3 shadow-sm">
               <input
                 type="text"
                 placeholder="Ask College Companion..."
                 value={chatInput}
                 onChange={(event) => setChatInput(event.target.value)}
                 disabled={isSending}
-                className="flex-1 border-none bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
+                className="flex-1 border-none bg-transparent text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={isSending || !chatInput.trim()}
-                className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg bg-[#28734e] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#205b3e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSending ? "Thinking..." : "Send"}
               </button>
             </form>
-            {chatError && <p className="mt-3 text-sm font-medium text-rose-600">{chatError}</p>}
+            {chatError && <p className="mt-3 text-sm font-medium text-rose-700">{chatError}</p>}
           </div>
         </section>
       );
@@ -1211,53 +1220,71 @@ export default function Home() {
   };
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.18),_transparent_20%),radial-gradient(circle_at_top_right,_rgba(168,85,247,0.18),_transparent_25%),linear-gradient(135deg,_#fef3c7,_#e0f2fe,_#f5d0fe)] px-6 py-8">
-      <div className="float-slow absolute -left-10 top-20 h-56 w-56 rounded-full bg-pink-300/40 blur-3xl" />
-      <div className="float-slower absolute right-0 top-40 h-64 w-64 rounded-full bg-sky-300/40 blur-3xl" />
-      <div className="float-slow absolute bottom-0 left-1/3 h-48 w-48 rounded-full bg-violet-300/40 blur-3xl" />
+    <main className="min-h-screen bg-[#e9e7df] px-6 py-8">
       <div className="relative mx-auto max-w-5xl">
-        <header className="flex flex-col gap-4 rounded-[2rem] border border-white/50 bg-white/70 px-6 py-4 shadow-[0_15px_50px_rgba(15,23,42,0.12)] backdrop-blur-md md:flex-row md:items-center md:justify-between">
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
-            College Companion
-          </h1>
+        <header className="overflow-hidden rounded-[1.75rem] border border-emerald-950/10 border-b-[3px] border-b-[#c6a45c] bg-[#28734e] text-white shadow-[0_18px_45px_rgba(40,115,78,0.22)]">
+          <div className="flex flex-col gap-4 border-b border-white/15 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="min-w-0">
+                <Image
+                  src="/college-companion-logo.png"
+                  alt="College Companion"
+                  width={1855}
+                  height={220}
+                  priority
+                  className="h-10 w-auto max-w-full object-contain object-left"
+                />
+                <p className="mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-emerald-100/70">
+                  College planning · Student success
+                </p>
+              </div>
+            </div>
 
-          <nav className="flex flex-wrap items-center gap-3 text-sm font-semibold text-slate-600">
+            <div className="flex items-center gap-2">
+              <Suspense>
+                <Show when="signed-out">
+                  <SignInButton>
+                    <button className="rounded-lg border border-white/25 px-4 py-2 text-sm font-semibold text-emerald-50 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f4e8c1]">
+                      Sign in
+                    </button>
+                  </SignInButton>
+                  <SignUpButton>
+                    <button className="rounded-lg bg-[#f4e8c1] px-4 py-2 text-sm font-bold text-emerald-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f4e8c1]">
+                      Create account
+                    </button>
+                  </SignUpButton>
+                </Show>
+                <Show when="signed-in">
+                  <Link
+                    href="/account"
+                    className="rounded-lg border border-white/25 px-4 py-2 text-sm font-semibold text-emerald-50 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f4e8c1]"
+                  >
+                    Account
+                  </Link>
+                  <UserButton />
+                </Show>
+              </Suspense>
+            </div>
+          </div>
+
+          <nav
+            aria-label="Main navigation"
+            className="flex items-center gap-1 overflow-x-auto px-4 py-3 text-sm font-semibold sm:px-6"
+          >
             {tabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`rounded-full px-4 py-2 transition-all ${
+                aria-pressed={activeTab === tab}
+                className={`shrink-0 whitespace-nowrap rounded-lg px-3.5 py-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f4e8c1] ${
                   activeTab === tab
-                    ? "bg-gradient-to-r from-slate-900 via-violet-600 to-fuchsia-500 text-white shadow-lg shadow-violet-200"
-                    : "bg-white/80 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                    ? "bg-[#f4e8c1] text-emerald-950 shadow-sm"
+                    : "text-emerald-50/80 hover:bg-white/10 hover:text-white"
                 }`}
               >
                 {tab}
               </button>
             ))}
-            <Suspense>
-              <Show when="signed-out">
-                <SignInButton>
-                  <button className="rounded-full bg-white/80 px-4 py-2 text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900">
-                    Sign in
-                  </button>
-                </SignInButton>
-                <SignUpButton>
-                  <button className="rounded-full bg-slate-900 px-4 py-2 text-white transition-colors hover:bg-slate-700">
-                    Create account
-                  </button>
-                </SignUpButton>
-              </Show>
-              <Show when="signed-in">
-                <Link
-                  href="/account"
-                  className="rounded-full bg-white/80 px-4 py-2 text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                >
-                  Account
-                </Link>
-                <UserButton />
-              </Show>
-            </Suspense>
           </nav>
         </header>
 
