@@ -1,5 +1,13 @@
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_MODEL = "openai/gpt-4o-mini";
+const MAX_HISTORY_MESSAGES = 20;
+const MAX_HISTORY_MESSAGE_LENGTH = 4000;
+const MAX_HISTORY_LENGTH = 16000;
+
+type HistoryMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
 
 export async function POST(request: Request) {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -11,7 +19,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { message?: unknown };
+  let body: { message?: unknown; history?: unknown };
 
   try {
     body = await request.json();
@@ -28,6 +36,40 @@ export async function POST(request: Request) {
   if (message.length > 1000) {
     return Response.json({ error: "Please keep questions under 1,000 characters." }, { status: 400 });
   }
+
+  if (body.history !== undefined && !Array.isArray(body.history)) {
+    return Response.json({ error: "Conversation history must be a list of messages." }, { status: 400 });
+  }
+
+  const history: HistoryMessage[] = [];
+  for (const item of (body.history as unknown[] | undefined)?.slice(-MAX_HISTORY_MESSAGES) ?? []) {
+    if (
+      typeof item !== "object" ||
+      item === null ||
+      !("role" in item) ||
+      !("content" in item) ||
+      (item.role !== "user" && item.role !== "assistant") ||
+      typeof item.content !== "string" ||
+      !item.content.trim() ||
+      item.content.length > MAX_HISTORY_MESSAGE_LENGTH
+    ) {
+      return Response.json({ error: "Conversation history contains an invalid message." }, { status: 400 });
+    }
+
+    history.push({ role: item.role, content: item.content });
+  }
+
+  let historyLength = 0;
+  const recentHistory: HistoryMessage[] = [];
+  for (const item of history.reverse()) {
+    if (historyLength + item.content.length > MAX_HISTORY_LENGTH) {
+      break;
+    }
+
+    recentHistory.push(item);
+    historyLength += item.content.length;
+  }
+  recentHistory.reverse();
 
   const isCasualMessage = /^(hi|hello|hey|thanks|thank you|good morning|good afternoon|good evening|how are you|what can you do)[!.?,\s]*$/i.test(
     message,
@@ -47,8 +89,9 @@ export async function POST(request: Request) {
           {
             role: "system",
             content:
-              "You are College Advisor, a practical and careful college planning assistant. For questions needing current information, use the provided web search results and prefer official college, university, government, and application-system websites. Clearly say when information may change, and never invent deadlines, requirements, costs, or policies. Keep answers concise and cite useful sources.",
+              "You are College Advisor, a practical and careful college planning assistant. For questions needing current information, use the provided web search results and prefer official college, university, government, and application-system websites. Clearly say when information may change, and never invent deadlines, requirements, costs, or policies. Keep answers concise. Do not include hyperlinks, Markdown links, or raw URLs in your answers; name reliable sources in plain text when useful.",
           },
+          ...recentHistory,
           { role: "user", content: message },
         ],
         ...(isCasualMessage ? {} : { plugins: [{ id: "web" }] }),

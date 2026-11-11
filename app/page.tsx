@@ -16,20 +16,13 @@ const quickPrompts = [
   "What should I do after submitting my applications?",
 ];
 
-type Citation = { title: string; uri: string };
 type ChatMessage = {
   sender: "bot" | "user";
   text: string;
-  citations?: Citation[];
-};
-
-type StreamCitation = {
-  type?: string;
-  url_citation?: { url?: string; title?: string };
 };
 
 type StreamChunk = {
-  choices?: { delta?: { content?: string; annotations?: StreamCitation[] } }[];
+  choices?: { delta?: { content?: string } }[];
   error?: { message?: string };
 };
 
@@ -358,7 +351,16 @@ export default function Home() {
       const response = await fetch("/api/ai-helper", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: prompt }),
+        body: JSON.stringify({
+          message: prompt,
+          history: chatMessages
+            .slice(initialChatMessages.length)
+            .filter((chatMessage) => chatMessage.text.trim())
+            .map((chatMessage) => ({
+              role: chatMessage.sender === "bot" ? "assistant" : "user",
+              content: chatMessage.text,
+            })),
+        }),
       });
 
       if (!response.ok) {
@@ -372,8 +374,6 @@ export default function Home() {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      const citations: Citation[] = [];
-      const citationUris = new Set<string>();
       let buffer = "";
       let eventData: string[] = [];
       let streamError = "";
@@ -401,14 +401,6 @@ export default function Home() {
             updateLatestBotMessage((chatMessage) => ({ ...chatMessage, text: chatMessage.text + content }));
           }
 
-          for (const annotation of choice?.delta?.annotations ?? []) {
-            const uri = annotation.url_citation?.url;
-
-            if (annotation.type === "url_citation" && uri && /^https?:\/\//i.test(uri) && !citationUris.has(uri)) {
-              citationUris.add(uri);
-              citations.push({ title: annotation.url_citation?.title || uri, uri });
-            }
-          }
         } catch {
           return;
         }
@@ -451,7 +443,6 @@ export default function Home() {
       updateLatestBotMessage((chatMessage) => ({
         ...chatMessage,
         text: chatMessage.text || "I could not find an answer.",
-        citations,
       }));
     } catch (error) {
       setChatError(error instanceof Error ? error.message : "The AI helper could not respond.");
@@ -623,7 +614,12 @@ export default function Home() {
                     {message.sender === "bot" ? (
                       <div className="chat-markdown">
                         {message.text ? (
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{ a: ({ children }) => <>{children}</> }}
+                          >
+                            {message.text}
+                          </ReactMarkdown>
                         ) : isSending && index === chatMessages.length - 1 ? (
                           <span className="animate-pulse">Thinking...</span>
                         ) : null}
@@ -632,21 +628,6 @@ export default function Home() {
                       message.text
                     )}
                   </div>
-                  {message.citations && message.citations.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {message.citations.map((citation) => (
-                        <a
-                          key={citation.uri}
-                          href={citation.uri}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-lg border border-emerald-900/15 bg-white px-3 py-1 text-xs font-semibold text-emerald-900 transition-colors hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
-                        >
-                          {citation.title}
-                        </a>
-                      ))}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
