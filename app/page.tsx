@@ -36,6 +36,13 @@ type Deadline = {
   date: string;
 };
 
+type ChecklistDeadline = {
+  id: string;
+  title: string;
+  schoolName: string;
+  date: string;
+};
+
 type DeadlineView = "list" | "calendar";
 
 type ResourceCategory = "All" | "Applications" | "Financial Aid" | "Scholarships" | "Planning";
@@ -596,13 +603,25 @@ export default function Home() {
 
   const today = new Date();
   const todayKey = getDateKey(today.getFullYear(), today.getMonth(), today.getDate());
-  const upcomingDeadlines = deadlines
+  const checklistDeadlines: ChecklistDeadline[] = checklistSchools.flatMap((school) =>
+    school.requirements.flatMap((requirement) => {
+      if (requirement.done) {
+        return [];
+      }
+
+      const date = getRequirementDateKey(requirement.date, today.getFullYear());
+      return date
+        ? [{ id: `${school.id}-${requirement.id}`, title: requirement.title, schoolName: school.name, date }]
+        : [];
+    }),
+  );
+  const upcomingDeadlines = checklistDeadlines
     .filter((deadline) => deadline.date >= todayKey)
     .sort((first, second) => first.date.localeCompare(second.date));
-  const overdueDeadlines = deadlines
+  const overdueDeadlines = checklistDeadlines
     .filter((deadline) => deadline.date < todayKey)
     .sort((first, second) => second.date.localeCompare(first.date));
-  const dashboardDeadlines = [...upcomingDeadlines, ...overdueDeadlines].slice(0, 3);
+  const dashboardDeadlines = [...overdueDeadlines, ...upcomingDeadlines].slice(0, 3);
   const totalRequirements = checklistSchools.reduce((total, school) => total + school.requirements.length, 0);
   const completedRequirements = checklistSchools.reduce(
     (total, school) => total + school.requirements.filter((requirement) => requirement.done).length,
@@ -801,7 +820,7 @@ export default function Home() {
                   },
                   {
                     label: "Tracked deadlines",
-                    value: deadlines.length,
+                    value: checklistDeadlines.length,
                     note: `${overdueDeadlines.length} overdue · ${upcomingDeadlines.length} upcoming`,
                     tone: "bg-white/10 text-white",
                   },
@@ -828,19 +847,28 @@ export default function Home() {
               <ul className="mt-4 space-y-3 text-sm text-white/90">
                 {dashboardDeadlines.map((deadline) => {
                   const isOverdue = deadline.date < todayKey;
+                  const isDueToday = deadline.date === todayKey;
 
                   return (
                   <li key={deadline.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/15 bg-white/10 px-3 py-2">
-                    <span>{deadline.title}</span>
+                    <span className="min-w-0">
+                      <span className="block truncate">{deadline.title}</span>
+                      <span className="block text-xs text-emerald-100/70">{deadline.schoolName}</span>
+                    </span>
                     <span className={`shrink-0 rounded-lg px-2 py-1 text-xs font-bold ${isOverdue ? "bg-rose-600 text-white" : "bg-[#f4e8c1] text-emerald-950"}`}>
-                      {isOverdue ? `Overdue · ${formatDeadlineDate(deadline.date)}` : deadline.date === todayKey ? "Due today" : formatDeadlineDate(deadline.date)}
+                      {isOverdue ? `Overdue · ${formatDeadlineDate(deadline.date)}` : isDueToday ? "Due today" : formatDeadlineDate(deadline.date)}
                     </span>
                   </li>
                   );
                 })}
-                {deadlines.length === 0 && (
+                {dashboardDeadlines.length === 0 && checklistLoadState === "loading" && (
                   <li className="rounded-xl border border-white/15 bg-white/10 px-3 py-4 text-white/80">
-                    No deadlines yet. Add one in the Deadlines tab.
+                    Loading college tasks…
+                  </li>
+                )}
+                {dashboardDeadlines.length === 0 && checklistLoadState !== "loading" && (
+                  <li className="rounded-xl border border-white/15 bg-white/10 px-3 py-4 text-white/80">
+                    No incomplete college tasks with due dates. Add tasks in the Colleges tab.
                   </li>
                 )}
               </ul>
