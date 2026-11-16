@@ -206,6 +206,9 @@ export default function Home() {
   const [deadlinesLoaded, setDeadlinesLoaded] = useState(false);
   const [deadlineTitle, setDeadlineTitle] = useState("");
   const [deadlineDate, setDeadlineDate] = useState("");
+  const [editingDeadlineId, setEditingDeadlineId] = useState<number | null>(null);
+  const [editingDeadlineTitle, setEditingDeadlineTitle] = useState("");
+  const [editingDeadlineDate, setEditingDeadlineDate] = useState("");
   const [deadlineView, setDeadlineView] = useState<DeadlineView>("list");
   const [calendarDate, setCalendarDate] = useState(() => {
     const today = new Date();
@@ -594,6 +597,38 @@ export default function Home() {
     setDeadlines((current) => [...current, { id: Date.now(), title, date: deadlineDate }].sort((a, b) => a.date.localeCompare(b.date)));
     setDeadlineTitle("");
     setDeadlineDate("");
+  };
+
+  const startEditingDeadline = (deadline: Deadline) => {
+    setEditingDeadlineId(deadline.id);
+    setEditingDeadlineTitle(deadline.title);
+    setEditingDeadlineDate(deadline.date);
+  };
+
+  const cancelEditingDeadline = () => {
+    setEditingDeadlineId(null);
+    setEditingDeadlineTitle("");
+    setEditingDeadlineDate("");
+  };
+
+  const handleUpdateDeadline = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const title = editingDeadlineTitle.trim();
+
+    if (editingDeadlineId === null || !title || !editingDeadlineDate) {
+      return;
+    }
+
+    setDeadlines((current) =>
+      current
+        .map((deadline) =>
+          deadline.id === editingDeadlineId
+            ? { ...deadline, title, date: editingDeadlineDate }
+            : deadline,
+        )
+        .sort((first, second) => first.date.localeCompare(second.date)),
+    );
+    cancelEditingDeadline();
   };
 
   const shiftCalendarMonth = (offset: number) => {
@@ -1671,13 +1706,63 @@ export default function Home() {
             {[...deadlines].sort((first, second) => first.date.localeCompare(second.date)).map((deadline) => (
               <div
                 key={deadline.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-[#c6a45c]/50 bg-[#f4eee2] px-4 py-3 text-slate-800 shadow-sm"
+                className="rounded-xl border border-[#c6a45c]/50 bg-[#f4eee2] px-4 py-3 text-slate-800 shadow-sm"
               >
-                <span>{deadline.title}</span>
-                <div className="flex items-center gap-2">
-                  <span className="rounded-lg bg-[#28734e] px-2 py-1 text-xs font-bold text-white">{formatDeadlineDate(deadline.date)}</span>
-                  <button type="button" onClick={() => setDeadlines((current) => current.filter((item) => item.id !== deadline.id))} className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-white hover:text-rose-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700" aria-label={`Remove ${deadline.title}`}>Remove</button>
-                </div>
+                {editingDeadlineId === deadline.id ? (
+                  <form onSubmit={handleUpdateDeadline} className="grid gap-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end">
+                    <label className="text-xs font-semibold text-emerald-950">
+                      Task
+                      <input
+                        type="text"
+                        value={editingDeadlineTitle}
+                        onChange={(event) => setEditingDeadlineTitle(event.target.value)}
+                        maxLength={100}
+                        required
+                        className="mt-1 w-full rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
+                      />
+                    </label>
+                    <label className="text-xs font-semibold text-emerald-950">
+                      Due date
+                      <input
+                        type="date"
+                        value={editingDeadlineDate}
+                        onChange={(event) => setEditingDeadlineDate(event.target.value)}
+                        required
+                        className="mt-1 rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
+                      />
+                    </label>
+                    <button
+                      type="submit"
+                      disabled={!editingDeadlineTitle.trim() || !editingDeadlineDate}
+                      className="rounded-lg bg-[#28734e] px-3 py-2 text-xs font-semibold text-white hover:bg-[#205b3e] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelEditingDeadline}
+                      className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-white"
+                    >
+                      Cancel
+                    </button>
+                  </form>
+                ) : (
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span>{deadline.title}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-lg bg-[#28734e] px-2 py-1 text-xs font-bold text-white">{formatDeadlineDate(deadline.date)}</span>
+                      <button
+                        type="button"
+                        onClick={() => startEditingDeadline(deadline)}
+                        className="rounded-lg px-2 py-1 text-xs font-semibold text-emerald-800 transition hover:bg-white focus-visible:outline-2 focus-visible:outline-emerald-700"
+                        aria-label={`Edit ${deadline.title}`}
+                      >
+                        Edit
+                      </button>
+                      <button type="button" onClick={() => setDeadlines((current) => current.filter((item) => item.id !== deadline.id))} className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-white hover:text-rose-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700" aria-label={`Remove ${deadline.title}`}>Remove</button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
             {deadlines.length === 0 && <p className="rounded-xl border border-white/15 bg-white/10 px-4 py-6 text-center text-sm text-white/85">No deadlines yet. Add one above to get started.</p>}
