@@ -2,7 +2,7 @@
 import { Show, SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import Image from "next/image";
-import { Suspense, startTransition, type FormEvent, useEffect, useState } from "react";
+import { Suspense, startTransition, type FormEvent, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -118,6 +118,17 @@ const initialChatMessages: ChatMessage[] = [
   },
 ];
 
+const confettiColors = ["#28734e", "#c6a45c", "#f4e8c1", "#fb7185", "#38bdf8", "#a78bfa"];
+const confettiPieces = Array.from({ length: 56 }, (_, index) => ({
+  id: index,
+  left: `${(index * 37) % 100}%`,
+  color: confettiColors[index % confettiColors.length],
+  delay: `${(index % 14) * 35}ms`,
+  duration: `${2400 + (index % 7) * 130}ms`,
+  width: `${6 + (index % 3) * 2}px`,
+  height: `${10 + (index % 4) * 3}px`,
+}));
+
 export default function Home() {
   const { user } = useUser();
   const accountName = user?.firstName || user?.fullName || user?.username;
@@ -148,21 +159,52 @@ export default function Home() {
   const [editingSchoolId, setEditingSchoolId] = useState<number | null>(null);
   const [checklistSearch, setChecklistSearch] = useState("");
   const [addSchoolError, setAddSchoolError] = useState("");
+  const [celebration, setCelebration] = useState<{ id: number; schoolName: string } | null>(null);
+  const celebrationId = useRef(0);
 
   const toggleRequirement = (schoolId: number, requirementId: number) => {
-  setSchools((current) =>
-    current.map((school) =>
-      school.id === schoolId
-        ? {
-            ...school,
-            requirements: school.requirements.map((r) =>
-              r.id === requirementId ? { ...r, done: !r.done } : r,
-            ),
-          }
-        : school,
-    ),
-  );
+    const school = schools.find((item) => item.id === schoolId);
+    const requirement = school?.requirements.find((item) => item.id === requirementId);
+
+    if (!school || !requirement) {
+      return;
+    }
+
+    const completesSchool =
+      school.requirements.length > 0 &&
+      school.requirements.every((item) =>
+        item.id === requirementId ? !item.done : item.done,
+      );
+
+    setSchools((current) =>
+      current.map((item) =>
+        item.id === schoolId
+          ? {
+              ...item,
+              requirements: item.requirements.map((itemRequirement) =>
+                itemRequirement.id === requirementId
+                  ? { ...itemRequirement, done: !itemRequirement.done }
+                  : itemRequirement,
+              ),
+            }
+          : item,
+      ),
+    );
+
+    if (completesSchool) {
+      celebrationId.current += 1;
+      setCelebration({ id: celebrationId.current, schoolName: school.name });
+    }
   };
+
+  useEffect(() => {
+    if (!celebration) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => setCelebration(null), 3800);
+    return () => window.clearTimeout(timeoutId);
+  }, [celebration]);
 
   const closeAddSchool = () => {
     setShowAddSchool(false);
@@ -1263,6 +1305,29 @@ export default function Home() {
         </header>
 
         {renderContent()}
+        {celebration && (
+          <>
+            <div key={celebration.id} className="confetti-celebration" aria-hidden="true">
+              {confettiPieces.map((piece) => (
+                <span
+                  key={piece.id}
+                  className="confetti-piece"
+                  style={{
+                    left: piece.left,
+                    backgroundColor: piece.color,
+                    animationDelay: piece.delay,
+                    animationDuration: piece.duration,
+                    width: piece.width,
+                    height: piece.height,
+                  }}
+                />
+              ))}
+            </div>
+            <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+              All requirements for {celebration.schoolName} are complete.
+            </p>
+          </>
+        )}
       </div>
     </main>
   );
