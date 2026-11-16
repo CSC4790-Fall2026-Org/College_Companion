@@ -6,7 +6,7 @@ import { Suspense, startTransition, type FormEvent, useEffect, useRef, useState 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-const tabs = ["Home", "College Chat", "Resources", "Deadlines", "Visualizations", "Checklist"] as const;
+const tabs = ["Home", "College Chat", "Resources", "Deadlines", "Visualizations", "Colleges"] as const;
 type Tab = (typeof tabs)[number];
 
 const quickPrompts = [
@@ -866,13 +866,13 @@ export default function Home() {
       );
     }
 
-    if (activeTab === "Checklist") {
+    if (activeTab === "Colleges") {
       return (
        <section className="fade-in-up mt-8 overflow-hidden rounded-[1.75rem] border border-emerald-950/10 border-b-[3px] border-b-[#c6a45c] bg-[#28734e] p-6 text-white shadow-[0_18px_45px_rgba(40,115,78,0.22)]">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#f4e8c1]">Stay organized</p>
-            <h2 className="mt-1 text-2xl font-semibold text-white">College Companion Checklist</h2>
+            <h2 className="mt-1 text-2xl font-semibold text-white">Colleges</h2>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <input
