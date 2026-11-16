@@ -8,7 +8,12 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CollegePennant } from "@/components/college-pennant";
 import { getPennantKey } from "@/lib/colleges";
-import { parseSavedSchools, type Requirement, type School } from "@/lib/checklist";
+import {
+  parseSavedSchools,
+  type Requirement,
+  type School,
+  type SchoolFitCategory,
+} from "@/lib/checklist";
 
 const tabs = ["Home", "College Chat", "Resources", "Deadlines", "Visualizations", "Colleges"] as const;
 type Tab = (typeof tabs)[number];
@@ -64,6 +69,7 @@ type Resource = {
 const calendarWeekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const resourceCategories: ResourceCategory[] = ["All", "Applications", "Financial Aid", "Scholarships", "Planning"];
+const schoolFitCategories: SchoolFitCategory[] = ["Best fit", "Reach", "Safety"];
 
 const resources: Resource[] = [
   { title: "Common App", category: "Applications", description: "Create and manage your college applications in one place.", href: "https://www.commonapp.org/" },
@@ -221,6 +227,7 @@ export default function Home() {
   const [checklistLoadAttempt, setChecklistLoadAttempt] = useState(0);
   const [showAddSchool, setShowAddSchool] = useState(false);
   const [newSchoolName, setNewSchoolName] = useState("");
+  const [newSchoolFitCategory, setNewSchoolFitCategory] = useState<SchoolFitCategory | null>(null);
   const [newAppType, setNewAppType] = useState("");
   const [newAppDueDate, setNewAppDueDate] = useState("");
   const [taskDrafts, setTaskDrafts] = useState<TaskDraft[]>(() => [createTaskDraft()]);
@@ -394,6 +401,7 @@ export default function Home() {
   const closeAddSchool = () => {
     setShowAddSchool(false);
     setNewSchoolName("");
+    setNewSchoolFitCategory(null);
     setNewAppType("");
     setNewAppDueDate("");
     setTaskDrafts([createTaskDraft()]);
@@ -468,6 +476,7 @@ export default function Home() {
       name,
       dueLabel: "Upcoming",
       requirements,
+      ...(newSchoolFitCategory ? { fitCategory: newSchoolFitCategory } : {}),
       pennantKey: getPennantKey(name),
     },
   ]);
@@ -488,6 +497,24 @@ export default function Home() {
           ? { ...school, requirements: school.requirements.filter((r) => r.id !== requirementId) }
           : school,
       ),
+    );
+  };
+
+  const updateSchoolFitCategory = (schoolId: number, fitCategory: SchoolFitCategory | undefined) => {
+    updateChecklistSchools((current) =>
+      current.map((school) => {
+        if (school.id !== schoolId) {
+          return school;
+        }
+
+        const updatedSchool = { ...school };
+        if (fitCategory) {
+          updatedSchool.fitCategory = fitCategory;
+        } else {
+          delete updatedSchool.fitCategory;
+        }
+        return updatedSchool;
+      }),
     );
   };
 
@@ -685,6 +712,25 @@ export default function Home() {
     (total, school) => total + school.requirements.filter((requirement) => requirement.done).length,
     0,
   );
+  const schoolFitCounts = schoolFitCategories.reduce(
+    (counts, category) => ({
+      ...counts,
+      [category]: checklistSchools.filter((school) => school.fitCategory === category).length,
+    }),
+    { "Best fit": 0, Reach: 0, Safety: 0 },
+  );
+  const categorizedSchoolCount = schoolFitCategories.reduce(
+    (total, category) => total + schoolFitCounts[category],
+    0,
+  );
+  const schoolFitTotal = checklistSchools.length;
+  const bestFitStop = schoolFitTotal ? (schoolFitCounts["Best fit"] / schoolFitTotal) * 100 : 0;
+  const reachStop = schoolFitTotal
+    ? bestFitStop + (schoolFitCounts.Reach / schoolFitTotal) * 100
+    : 0;
+  const schoolFitGradient = schoolFitTotal
+    ? `conic-gradient(#28734e 0 ${bestFitStop}%, #c6a45c ${bestFitStop}% ${reachStop}%, #b8c5bb ${reachStop}% 100%)`
+    : "#d9dfd5";
 
   const sendMessage = async (message?: string) => {
     const prompt = (message ?? chatInput).trim();
@@ -1116,9 +1162,6 @@ export default function Home() {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#f4e8c1]">Visualizations</p>
               <h2 className="mt-1 text-2xl font-semibold text-white">Fun ways to track your college journey</h2>
             </div>
-            <button className="rounded-lg bg-[#f4e8c1] px-4 py-2 text-sm font-semibold text-emerald-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f4e8c1]">
-              Refresh insights
-            </button>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
@@ -1128,18 +1171,26 @@ export default function Home() {
                 <div
                   className="flex h-28 w-28 items-center justify-center rounded-full text-xl font-semibold text-emerald-950"
                   style={{
-                    background: "conic-gradient(#28734e 0 82%, #d9dfd5 82% 100%)",
+                    background: schoolFitGradient,
                   }}
                 >
-                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white">
-                    82%
+                  <div className="flex h-20 w-20 flex-col items-center justify-center rounded-full bg-white">
+                    <span>{categorizedSchoolCount}/{schoolFitTotal}</span>
+                    <span className="text-[9px] font-medium text-slate-500">categorized</span>
                   </div>
                 </div>
 
                 <div className="space-y-2 text-sm text-slate-700">
-                  <p>Best fit schools: 6</p>
-                  <p>Reach schools: 2</p>
-                  <p>Safety schools: 3</p>
+                  {[
+                    { category: "Best fit" as const, color: "bg-[#28734e]" },
+                    { category: "Reach" as const, color: "bg-[#c6a45c]" },
+                    { category: "Safety" as const, color: "bg-[#b8c5bb]" },
+                  ].map(({ category, color }) => (
+                    <p key={category} className="flex items-center gap-2">
+                      <span aria-hidden="true" className={`h-3 w-3 shrink-0 rounded-full ${color}`} />
+                      <span>{category} schools: {schoolFitCounts[category]}</span>
+                    </p>
+                  ))}
                 </div>
               </div>
             </div>
@@ -1281,6 +1332,26 @@ export default function Home() {
             <div>
             <p className="text-sm font-semibold text-emerald-950">{school.name}</p>
             <p className="text-xs text-slate-500">{school.requirements.length} requirements</p>
+            {editingSchoolId === school.id && (
+              <label className="mt-2 block text-xs font-semibold text-emerald-950">
+                School fit
+                <select
+                  value={school.fitCategory ?? ""}
+                  onChange={(event) =>
+                    updateSchoolFitCategory(
+                      school.id,
+                      schoolFitCategories.find((category) => category === event.target.value),
+                    )
+                  }
+                  className="mt-1 rounded-lg border border-emerald-900/15 bg-white px-2 py-1 text-xs font-normal text-slate-900 outline-none focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
+                >
+                  <option value="">Not categorized</option>
+                  {schoolFitCategories.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </label>
+            )}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -1505,6 +1576,32 @@ export default function Home() {
                 <span className="mt-1 block text-xs font-normal text-rose-600">{addSchoolError}</span>
               )}
           </label>
+
+          <fieldset>
+            <legend className="text-xs font-semibold text-emerald-950">School fit (optional)</legend>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {schoolFitCategories.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  aria-pressed={newSchoolFitCategory === category}
+                  onClick={() =>
+                    setNewSchoolFitCategory((current) => current === category ? null : category)
+                  }
+                  className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                    newSchoolFitCategory === category
+                      ? "border-[#28734e] bg-[#28734e] text-white"
+                      : "border-emerald-900/20 bg-white text-emerald-900 hover:bg-emerald-50"
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1 text-xs font-normal text-slate-500">
+              Choose a category to include this college in the School fit meter.
+            </p>
+          </fieldset>
 
           <div className="grid grid-cols-2 gap-3">
             <label className="block text-xs font-semibold text-emerald-950">

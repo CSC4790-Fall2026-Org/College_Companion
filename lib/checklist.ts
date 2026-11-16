@@ -11,11 +11,14 @@ export type Requirement = {
   done: boolean;
 };
 
+export type SchoolFitCategory = "Best fit" | "Reach" | "Safety";
+
 export type School = {
   id: number;
   name: string;
   dueLabel: string;
   requirements: Requirement[];
+  fitCategory?: SchoolFitCategory;
   pennantKey?: PennantKey;
 };
 
@@ -75,11 +78,26 @@ export function parseSavedSchools(value: unknown): School[] {
       };
     });
 
+    const fitCategory =
+      "fitCategory" in entry && entry.fitCategory !== undefined
+        ? entry.fitCategory
+        : undefined;
+
+    if (
+      fitCategory !== undefined &&
+      fitCategory !== "Best fit" &&
+      fitCategory !== "Reach" &&
+      fitCategory !== "Safety"
+    ) {
+      throw new Error(`Saved college ${schoolIndex + 1} has an invalid school fit category.`);
+    }
+
     return addPennantMetadata({
       id: entry.id,
       name: entry.name,
       dueLabel: entry.dueLabel,
       requirements,
+      ...(fitCategory ? { fitCategory } : {}),
     });
   });
 }
