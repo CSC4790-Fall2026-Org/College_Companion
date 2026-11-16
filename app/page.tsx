@@ -133,6 +133,15 @@ const confettiPieces = Array.from({ length: 56 }, (_, index) => ({
   height: `${10 + (index % 4) * 3}px`,
 }));
 
+type TaskDraft = { id: number; name: string; date: string; type: string; saved: boolean };
+const createTaskDraft = (): TaskDraft => ({
+  id: Date.now() + Math.random(),
+  name: "",
+  date: "",
+  type: "",
+  saved: false,
+});
+
 export default function Home() {
   const { isLoaded: userLoaded, user } = useUser();
   const { isLoaded: sessionLoaded } = useSession();
@@ -163,9 +172,7 @@ export default function Home() {
   const [newSchoolName, setNewSchoolName] = useState("");
   const [newAppType, setNewAppType] = useState("");
   const [newAppDueDate, setNewAppDueDate] = useState("");
-  const [newTaskName, setNewTaskName] = useState("");
-  const [newTaskDate, setNewTaskDate] = useState("");
-  const [newTaskType, setNewTaskType] = useState("");
+  const [taskDrafts, setTaskDrafts] = useState<TaskDraft[]>(() => [createTaskDraft()]);
   const [editingSchoolId, setEditingSchoolId] = useState<number | null>(null);
   const [checklistSearch, setChecklistSearch] = useState("");
   const [addSchoolError, setAddSchoolError] = useState("");
@@ -334,10 +341,23 @@ export default function Home() {
     setNewSchoolName("");
     setNewAppType("");
     setNewAppDueDate("");
-    setNewTaskName("");
-    setNewTaskDate("");
-    setNewTaskType("");
+    setTaskDrafts([createTaskDraft()]);
     setAddSchoolError("");
+  };
+
+  const updateTaskDraft = (id: number, changes: Partial<TaskDraft>) => {
+    setTaskDrafts((current) => current.map((t) => (t.id === id ? { ...t, ...changes } : t)));
+  };
+
+  const addTaskDraft = () => {
+    setTaskDrafts((current) => [...current, createTaskDraft()]);
+  };
+
+  const removeTaskDraft = (id: number) => {
+    setTaskDrafts((current) => {
+      const next = current.filter((t) => t.id !== id);
+      return next.length ? next : [createTaskDraft()];
+    });
   };
 
   const handleAddSchool = () => {
@@ -370,17 +390,21 @@ export default function Home() {
       });
     }
 
-  if (newTaskName.trim()) {
+    taskDrafts.forEach((task) => {
+    if (!task.name.trim()) {
+      return;
+    }
+
     requirements.push({
       id: requirements.length + 1,
-      title: newTaskName.trim(),
-      category: newTaskType || "Task",
-      date: newTaskDate ? formatDeadlineDate(newTaskDate) : "",
+      title: task.name.trim(),
+      category: task.type || "Task",
+      date: task.date ? formatDeadlineDate(task.date) : "",
       doneLabel: "Complete",
       openLabel: "Upcoming",
       done: false,
     });
-  }
+  });
 
   updateChecklistSchools((current) => [
     ...current,
@@ -1241,80 +1265,134 @@ export default function Home() {
           </div>
 
           <div className="space-y-4 pt-2">
-            <p className="text-sm font-semibold text-emerald-950">New task</p>
+  <p className="text-sm font-semibold text-emerald-950">Tasks</p>
 
-            <label className="block text-xs font-semibold text-emerald-950">
-              Task name
-              <input
-                type="text"
-                value={newTaskName}
-                onChange={(event) => setNewTaskName(event.target.value)}
-                placeholder="e.g. Review application packet"
-                className="mt-1 w-full rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
-              />
-            </label>
-
-            <label className="block text-xs font-semibold text-emerald-950">
-              Task due date
-              <input
-                type="date"
-                value={newTaskDate}
-                onChange={(event) => setNewTaskDate(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
-              />
-            </label>
-
-            <label className="block text-xs font-semibold text-emerald-950">
-              Task type
-              <select
-                value={newTaskType}
-                onChange={(event) => setNewTaskType(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
-              >
-                <option value="">Select a task type</option>
-                <option>Application</option>
-                <option>Academic records</option>
-                <option>Recommendations</option>
-                <option>Writing supplement</option>
-                <option>Financial aid</option>
-              </select>
-            </label>
-
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                className="rounded-lg border border-emerald-900/20 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-50"
-              >
-                Upload task
-              </button>
-              <button
-                type="button"
-                className="rounded-lg border border-emerald-900/20 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-50"
-              >
-                Add another task
-              </button>
-            </div>
-          </div>
+  {taskDrafts.map((task, index) =>
+    task.saved ? (
+      <div
+        key={task.id}
+        className="flex items-center gap-4 rounded-lg border border-emerald-900/15 bg-white px-3 py-2"
+      >
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-emerald-950">{task.name}</p>
+          <p className="text-xs text-slate-400">{task.type || "Task"}</p>
+        </div>
+        <span className="text-xs text-slate-500">
+          {task.date ? formatDeadlineDate(task.date) : ""}
+        </span>
+        <button
+          type="button"
+          onClick={() => updateTaskDraft(task.id, { saved: false })}
+          className="rounded-lg px-2 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-900/10"
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          onClick={() => removeTaskDraft(task.id)}
+          aria-label={`Remove ${task.name}`}
+          className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+        >
+          ✕
+        </button>
+      </div>
+    ) : (
+      <div
+        key={task.id}
+        className="space-y-4 rounded-lg border border-emerald-900/15 bg-white/60 p-3"
+      >
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold text-emerald-950">Task {index + 1}</p>
+          {taskDrafts.length > 1 && (
+            <button
+              type="button"
+              onClick={() => removeTaskDraft(task.id)}
+              aria-label={`Remove task ${index + 1}`}
+              className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
+        <label className="block text-xs font-semibold text-emerald-950">
+          Task name
+          <input
+            type="text"
+            value={task.name}
+            onChange={(event) => updateTaskDraft(task.id, { name: event.target.value })}
+            placeholder="e.g. Review application packet"
+            className="mt-1 w-full rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
+          />
+        </label>
+
+        <label className="block text-xs font-semibold text-emerald-950">
+          Task due date
+          <input
+            type="date"
+            value={task.date}
+            onChange={(event) => updateTaskDraft(task.id, { date: event.target.value })}
+            className="mt-1 w-full rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
+          />
+        </label>
+
+        <label className="block text-xs font-semibold text-emerald-950">
+          Task type
+          <select
+            value={task.type}
+            onChange={(event) => updateTaskDraft(task.id, { type: event.target.value })}
+            className="mt-1 w-full rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
+          >
+            <option value="">Select a task type</option>
+            <option>Application</option>
+            <option>Academic records</option>
+            <option>Recommendations</option>
+            <option>Writing supplement</option>
+            <option>Financial aid</option>
+          </select>
+        </label>
+
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => updateTaskDraft(task.id, { saved: true })}
+            disabled={!task.name.trim()}
+            className="rounded-lg border border-emerald-900/20 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Upload task
+          </button>
+        </div>
+      </div>
+    ),
+   )}
+
+    <div className="flex justify-end">
+      <button
+        type="button"
+        onClick={addTaskDraft}
+        disabled={taskDrafts.some((t) => !t.saved && !t.name.trim())}
+        className="rounded-lg border border-emerald-900/20 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Add another task
+      </button>
+    </div>
+  </div>
+  
+  </div>
         <div className="border-t border-emerald-900/10 p-3">
           <button
             type="button"
             onClick={handleAddSchool}
             disabled={!newSchoolName.trim()}
-            className="w-full rounded-lg bg-[#28734e] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#205b3e] disabled:cursor-not-allowed disabled:opacity-50"
-          >
+            className="w-full rounded-lg bg-[#28734e] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#205b3e] disabled:cursor-not-allowed disabled:opacity-50">
             + Add school
           </button>
-          </div>
         </div>
       </div>
-    </div>,
-              document.body,
-            )}
-    </section>
-  );
-}
+    </div>
+  </div>,
+  document.body,)}
+  </section>);}
 
     return (
       <section className="fade-in-up mt-8 overflow-hidden rounded-[1.75rem] border border-emerald-950/10 border-b-[3px] border-b-[#c6a45c] bg-[#28734e] p-6 text-white shadow-[0_18px_45px_rgba(40,115,78,0.22)]">
