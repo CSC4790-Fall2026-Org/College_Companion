@@ -1,10 +1,14 @@
 "use client";
-import { Show, SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
+import { Show, SignInButton, SignUpButton, UserButton, useSession, useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import Image from "next/image";
+import { createPortal } from "react-dom";
 import { Suspense, startTransition, type FormEvent, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { CollegePennant } from "@/components/college-pennant";
+import { getPennantKey } from "@/lib/colleges";
+import { parseSavedSchools, type Requirement, type School } from "@/lib/checklist";
 
 const tabs = ["Home", "College Chat", "Resources", "Deadlines", "Visualizations", "Colleges"] as const;
 type Tab = (typeof tabs)[number];
@@ -69,22 +73,9 @@ const defaultDeadlines: Deadline[] = [
   { id: 4, title: "Financial aid form review", date: "2026-10-01" },
 ];
 
-type Requirement = {
-  id: number;
-  title: string;
-  category: string;
-  date: string;
-  doneLabel: string;
-  openLabel: string;
-  done: boolean;
-};
-
-type School = {
-  id: number;
-  name: string;
-  dueLabel: string;
-  requirements: Requirement[];
-};
+type ChecklistLoadResult =
+  | { userId: string; status: "ready" }
+  | { userId: string; status: "error"; message: string };
 
 const defaultSchools: School[] = [
   {
@@ -111,6 +102,19 @@ const defaultSchools: School[] = [
   },
 ];
 
+function getChecklistErrorMessage(error: unknown, operation: "load" | "save"): string {
+  const errorMessage = error instanceof Error ? error.message : "";
+  const normalizedErrorMessage = errorMessage.toLowerCase();
+
+  if (error instanceof TypeError && normalizedErrorMessage.includes("fetch")) {
+    return `Could not connect to checklist storage while trying to ${operation}. Check that the app server is running and retry.`;
+  }
+
+  return error instanceof Error
+    ? `Could not ${operation} your checklist: ${errorMessage}`
+    : `An unexpected error occurred while trying to ${operation} your checklist.`;
+}
+
 const initialChatMessages: ChatMessage[] = [
   {
     sender: "bot",
@@ -130,7 +134,9 @@ const confettiPieces = Array.from({ length: 56 }, (_, index) => ({
 }));
 
 export default function Home() {
-  const { user } = useUser();
+  const { isLoaded: userLoaded, user } = useUser();
+  const { isLoaded: sessionLoaded } = useSession();
+  const userId = user?.id ?? null;
   const accountName = user?.firstName || user?.fullName || user?.username;
   const [activeTab, setActiveTab] = useState<Tab>("Home");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialChatMessages);
@@ -148,7 +154,11 @@ export default function Home() {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
   });
-  const [schools, setSchools] = useState<School[]>(defaultSchools);
+  const [schools, setSchools] = useState<School[]>([]);
+  const [demoSchools, setDemoSchools] = useState<School[]>(defaultSchools);
+  const [checklistLoadResult, setChecklistLoadResult] = useState<ChecklistLoadResult | null>(null);
+  const [checklistSaveError, setChecklistSaveError] = useState("");
+  const [checklistLoadAttempt, setChecklistLoadAttempt] = useState(0);
   const [showAddSchool, setShowAddSchool] = useState(false);
   const [newSchoolName, setNewSchoolName] = useState("");
   const [newAppType, setNewAppType] = useState("");
@@ -161,9 +171,122 @@ export default function Home() {
   const [addSchoolError, setAddSchoolError] = useState("");
   const [celebration, setCelebration] = useState<{ id: number; schoolName: string } | null>(null);
   const celebrationId = useRef(0);
+  const checklistSaveQueue = useRef<Promise<void>>(Promise.resolve());
+  const checklistSchools =
+    !userLoaded || !sessionLoaded ? [] : user ? schools : demoSchools;
+  const checklistLoadState: "loading" | "ready" | "error" =
+    !user
+      ? userLoaded && sessionLoaded
+        ? "ready"
+        : "loading"
+      : checklistLoadResult?.userId === user.id
+        ? checklistLoadResult.status
+        : "loading";
+  const checklistLoadError =
+    checklistLoadResult &&
+    checklistLoadResult.userId === user?.id &&
+    checklistLoadResult.status === "error"
+      ? checklistLoadResult.message
+      : "";
+
+  useEffect(() => {
+    if (!userLoaded || !sessionLoaded || !userId) {
+      return;
+    }
+
+    let active = true;
+
+    const loadChecklist = async () => {
+      const response = await fetch("/api/checklist", { cache: "no-store" });
+      const result = (await response.json()) as { schools?: unknown; error?: unknown };
+
+      if (!response.ok) {
+        throw new Error(
+          typeof result.error === "string" ? result.error : "The checklist request failed.",
+        );
+      }
+
+      const parsedSchools = parseSavedSchools(result.schools);
+
+      if (active) {
+        setSchools(parsedSchools);
+        setChecklistSaveError("");
+        setChecklistLoadResult({ userId, status: "ready" });
+      }
+    };
+
+    void loadChecklist().catch((error: unknown) => {
+      if (active) {
+        setChecklistLoadResult({
+          userId,
+          status: "error",
+          message: getChecklistErrorMessage(error, "load"),
+        });
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [userLoaded, sessionLoaded, userId, checklistLoadAttempt]);
+
+  useEffect(() => {
+    if (
+      !userId ||
+      checklistLoadResult?.userId !== userId ||
+      checklistLoadResult.status !== "ready"
+    ) {
+      return;
+    }
+
+    let active = true;
+    const schoolsToSave = schools;
+    const timeoutId = window.setTimeout(() => {
+      checklistSaveQueue.current = checklistSaveQueue.current.then(async () => {
+        if (!active) {
+          return;
+        }
+
+        const response = await fetch("/api/checklist", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ schools: schoolsToSave }),
+        });
+
+        const result = (await response.json()) as { error?: unknown };
+
+        if (!response.ok) {
+          throw new Error(
+            typeof result.error === "string" ? result.error : "The checklist request failed.",
+          );
+        }
+
+        if (active) {
+          setChecklistSaveError("");
+        }
+      }).catch((error: unknown) => {
+        if (active) {
+          setChecklistSaveError(getChecklistErrorMessage(error, "save"));
+        }
+      });
+    }, 350);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [schools, userId, checklistLoadResult]);
+
+  const updateChecklistSchools = (update: (current: School[]) => School[]) => {
+    if (user) {
+      setSchools(update);
+    } else {
+      setDemoSchools(update);
+    }
+  };
 
   const toggleRequirement = (schoolId: number, requirementId: number) => {
-    const school = schools.find((item) => item.id === schoolId);
+    const school = checklistSchools.find((item) => item.id === schoolId);
     const requirement = school?.requirements.find((item) => item.id === requirementId);
 
     if (!school || !requirement) {
@@ -176,7 +299,7 @@ export default function Home() {
         item.id === requirementId ? !item.done : item.done,
       );
 
-    setSchools((current) =>
+    updateChecklistSchools((current) =>
       current.map((item) =>
         item.id === schoolId
           ? {
@@ -224,7 +347,7 @@ export default function Home() {
       return;
     }
 
-    const isDuplicate = schools.some(
+    const isDuplicate = checklistSchools.some(
       (school) => school.name.trim().toLowerCase() === name.toLowerCase(),
     );
 
@@ -259,7 +382,16 @@ export default function Home() {
     });
   }
 
-  setSchools((current) => [...current, { id: Date.now(), name, dueLabel: "Upcoming", requirements }]);
+  updateChecklistSchools((current) => [
+    ...current,
+    {
+      id: Date.now(),
+      name,
+      dueLabel: "Upcoming",
+      requirements,
+      pennantKey: getPennantKey(name),
+    },
+  ]);
   closeAddSchool();
   };
 
@@ -267,11 +399,11 @@ export default function Home() {
     if (!window.confirm("Delete this school and all of its requirements?")) {
       return;
     }
-    setSchools((current) => current.filter((school) => school.id !== id));
+    updateChecklistSchools((current) => current.filter((school) => school.id !== id));
   };
 
   const removeRequirement = (schoolId: number, requirementId: number) => {
-    setSchools((current) =>
+    updateChecklistSchools((current) =>
       current.map((school) =>
         school.id === schoolId
           ? { ...school, requirements: school.requirements.filter((r) => r.id !== requirementId) }
@@ -359,8 +491,8 @@ export default function Home() {
     .filter((deadline) => deadline.date < todayKey)
     .sort((first, second) => second.date.localeCompare(first.date));
   const dashboardDeadlines = [...upcomingDeadlines, ...overdueDeadlines].slice(0, 3);
-  const totalRequirements = schools.reduce((total, school) => total + school.requirements.length, 0);
-  const completedRequirements = schools.reduce(
+  const totalRequirements = checklistSchools.reduce((total, school) => total + school.requirements.length, 0);
+  const completedRequirements = checklistSchools.reduce(
     (total, school) => total + school.requirements.filter((requirement) => requirement.done).length,
     0,
   );
@@ -510,7 +642,7 @@ export default function Home() {
 
   const checklistQuery = checklistSearch.trim().toLowerCase();
 
-  const visibleSchools = schools.flatMap((school) => {
+  const visibleSchools = checklistSchools.flatMap((school) => {
   if (!checklistQuery || school.name.toLowerCase().includes(checklistQuery)) {
     return [{ school, rows: school.requirements }];
   }
@@ -551,7 +683,7 @@ export default function Home() {
                 {[
                   {
                     label: "Applications",
-                    value: schools.length,
+                    value: checklistSchools.length,
                     note: `${completedRequirements} of ${totalRequirements} checklist items complete`,
                     tone: "bg-white/10 text-white",
                   },
@@ -894,7 +1026,8 @@ export default function Home() {
           <button
             type="button"
             onClick={() => setShowAddSchool(true)}
-            className="rounded-lg bg-[#f4e8c1] px-4 py-2 text-sm font-semibold text-emerald-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f4e8c1]"
+            disabled={checklistLoadState !== "ready"}
+            className="rounded-lg bg-[#f4e8c1] px-4 py-2 text-sm font-semibold text-emerald-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f4e8c1] disabled:cursor-not-allowed disabled:opacity-60"
           >
             Add school
           </button>
@@ -903,16 +1036,54 @@ export default function Home() {
       </div>
 
       <div className="mt-6 space-y-4">
-      {visibleSchools.map(({school, rows}) => {
+      {checklistLoadState === "loading" && (
+        <p className="rounded-xl bg-white/10 px-4 py-3 text-sm text-white" role="status">
+          Loading your college checklist…
+        </p>
+      )}
+      {checklistLoadState === "error" && (
+        <div className="flex flex-col gap-3 rounded-xl border border-rose-200 bg-white px-4 py-3 text-sm text-rose-800 sm:flex-row sm:items-center sm:justify-between" role="alert">
+          <span>{checklistLoadError}</span>
+          <button
+            type="button"
+            onClick={() => {
+              setChecklistLoadResult(null);
+              setChecklistLoadAttempt((attempt) => attempt + 1);
+            }}
+            className="w-fit rounded-lg border border-rose-300 px-3 py-1.5 font-semibold hover:bg-rose-50"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+      {checklistLoadState === "ready" && !user && (
+        <p className="rounded-xl bg-white/10 px-4 py-3 text-sm text-white">
+          Demo checklist. Sign in to create and save your own college list.
+        </p>
+      )}
+      {checklistLoadState === "ready" && user && checklistSchools.length === 0 && (
+        <p className="rounded-xl bg-white/10 px-4 py-3 text-sm text-white">
+          Your checklist is empty. Add a college to get started.
+        </p>
+      )}
+      {checklistLoadState === "ready" && checklistSaveError && (
+        <p className="rounded-xl border border-rose-200 bg-white px-4 py-3 text-sm text-rose-800" role="alert">
+          {checklistSaveError}
+        </p>
+      )}
+      {checklistLoadState === "ready" && visibleSchools.map(({school, rows}) => {
       const completed = school.requirements.filter((r) => r.done).length;
       const percent = school.requirements.length ? (completed / school.requirements.length) * 100 : 0;
       return (
         <div key={school.id} className="overflow-hidden rounded-2xl border border-[#c6a45c]/50 bg-[#f4eee2] text-slate-800 shadow-sm">
                 {/* School header */}
         <div className="flex flex-col gap-3 border-b border-emerald-900/10 bg-white/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+          <div className="flex items-center gap-3">
+            <CollegePennant schoolName={school.name} pennantKey={school.pennantKey} />
+            <div>
             <p className="text-sm font-semibold text-emerald-950">{school.name}</p>
             <p className="text-xs text-slate-500">{school.requirements.length} requirements</p>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div
@@ -994,17 +1165,21 @@ export default function Home() {
     );
   })}
       </div>
-        {showAddSchool && (
+        {showAddSchool &&
+          createPortal(
   <div
-    className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-950/50 p-4 backdrop-blur-sm"
+    className="fixed inset-0 z-50 flex h-dvh w-screen items-stretch justify-stretch bg-emerald-950/50 backdrop-blur-sm"
     onClick={closeAddSchool}
   >
     <div
-      className="h-[48rem] max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-[#c6a45c]/50 bg-[#f4eee2] p-6 text-slate-800 shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-school-title"
+      className="h-full w-full overflow-y-auto border border-[#c6a45c]/50 bg-[#f4eee2] p-6 text-slate-800 shadow-xl"
       onClick={(event) => event.stopPropagation()}
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-emerald-950">Add a school</h2>
+        <h2 id="add-school-title" className="text-xl font-semibold text-emerald-950">Add a school</h2>
         <button
           type="button"
           onClick={closeAddSchool}
@@ -1134,8 +1309,9 @@ export default function Home() {
           </div>
         </div>
       </div>
-    </div>
-  )}
+    </div>,
+              document.body,
+            )}
     </section>
   );
 }

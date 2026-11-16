@@ -1,0 +1,3 @@
+[auth.third_party.clerk]
+enabled = true
+domain = "tough-toad-3183.clerk.accounts.dev"
