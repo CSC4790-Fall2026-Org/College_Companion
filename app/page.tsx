@@ -43,6 +43,13 @@ type ChecklistDeadline = {
   date: string;
 };
 
+type HomepageDeadline = {
+  id: string;
+  title: string;
+  source: string;
+  date: string;
+};
+
 type DeadlineView = "list" | "calendar";
 
 type ResourceCategory = "All" | "Applications" | "Financial Aid" | "Scholarships" | "Planning";
@@ -615,13 +622,29 @@ export default function Home() {
         : [];
     }),
   );
-  const upcomingDeadlines = checklistDeadlines
+  const homepageDeadlines: HomepageDeadline[] = [
+    ...checklistDeadlines.map((deadline) => ({
+      id: deadline.id,
+      title: deadline.title,
+      source: deadline.schoolName,
+      date: deadline.date,
+    })),
+    ...deadlines.map((deadline) => ({
+      id: `deadline-${deadline.id}`,
+      title: deadline.title,
+      source: "Deadlines",
+      date: deadline.date,
+    })),
+  ];
+  const upcomingDeadlines = homepageDeadlines
     .filter((deadline) => deadline.date >= todayKey)
     .sort((first, second) => first.date.localeCompare(second.date));
-  const overdueDeadlines = checklistDeadlines
+  const overdueDeadlines = homepageDeadlines
     .filter((deadline) => deadline.date < todayKey)
     .sort((first, second) => second.date.localeCompare(first.date));
-  const dashboardDeadlines = [...overdueDeadlines, ...upcomingDeadlines].slice(0, 3);
+  const dashboardDeadlines = [...homepageDeadlines]
+    .sort((first, second) => first.date.localeCompare(second.date))
+    .slice(0, 3);
   const totalRequirements = checklistSchools.reduce((total, school) => total + school.requirements.length, 0);
   const completedRequirements = checklistSchools.reduce(
     (total, school) => total + school.requirements.filter((requirement) => requirement.done).length,
@@ -820,7 +843,7 @@ export default function Home() {
                   },
                   {
                     label: "Tracked deadlines",
-                    value: checklistDeadlines.length,
+                    value: homepageDeadlines.length,
                     note: `${overdueDeadlines.length} overdue · ${upcomingDeadlines.length} upcoming`,
                     tone: "bg-white/10 text-white",
                   },
@@ -843,7 +866,7 @@ export default function Home() {
 
           <div className="mt-8 grid gap-6 md:grid-cols-2">
             <div className="card-lift rounded-[1.75rem] border border-emerald-950/10 border-b-[3px] border-b-[#c6a45c] bg-[#28734e] p-5 text-white shadow-[0_18px_45px_rgba(40,115,78,0.18)]">
-              <h3 className="text-xl font-semibold">Your deadlines</h3>
+              <h3 className="text-xl font-semibold">Upcoming tasks</h3>
               <ul className="mt-4 space-y-3 text-sm text-white/90">
                 {dashboardDeadlines.map((deadline) => {
                   const isOverdue = deadline.date < todayKey;
@@ -853,7 +876,7 @@ export default function Home() {
                   <li key={deadline.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/15 bg-white/10 px-3 py-2">
                     <span className="min-w-0">
                       <span className="block truncate">{deadline.title}</span>
-                      <span className="block text-xs text-emerald-100/70">{deadline.schoolName}</span>
+                      <span className="block text-xs text-emerald-100/70">{deadline.source}</span>
                     </span>
                     <span className={`shrink-0 rounded-lg px-2 py-1 text-xs font-bold ${isOverdue ? "bg-rose-600 text-white" : "bg-[#f4e8c1] text-emerald-950"}`}>
                       {isOverdue ? `Overdue · ${formatDeadlineDate(deadline.date)}` : isDueToday ? "Due today" : formatDeadlineDate(deadline.date)}
@@ -1610,7 +1633,10 @@ export default function Home() {
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#f4e8c1]">Stay on track</p>
             <h2 className="mt-1 text-2xl font-semibold text-white">Deadlines</h2>
           </div>
-          <p className="text-sm text-emerald-50/80">{deadlines.length} {deadlines.length === 1 ? "deadline" : "deadlines"}</p>
+          <p className="text-sm text-emerald-50/80">
+            {deadlines.length + checklistDeadlines.length}{" "}
+            {deadlines.length + checklistDeadlines.length === 1 ? "deadline" : "deadlines"}
+          </p>
         </div>
 
         <div className="mt-5 inline-flex rounded-xl border border-white/15 bg-white/10 p-1">
@@ -1642,7 +1668,7 @@ export default function Home() {
 
         {deadlineView === "list" ? (
           <div className="mt-6 space-y-3">
-            {deadlines.map((deadline) => (
+            {[...deadlines].sort((first, second) => first.date.localeCompare(second.date)).map((deadline) => (
               <div
                 key={deadline.id}
                 className="flex items-center justify-between gap-3 rounded-xl border border-[#c6a45c]/50 bg-[#f4eee2] px-4 py-3 text-slate-800 shadow-sm"
@@ -1673,6 +1699,7 @@ export default function Home() {
               {calendarCells.map((day, index) => {
                 const dateKey = day === null ? "" : getDateKey(calendarYear, calendarMonth, day);
                 const dayDeadlines = deadlines.filter((deadline) => deadline.date === dateKey);
+                const dayChecklistTasks = checklistDeadlines.filter((task) => task.date === dateKey);
 
                 return (
                   <div key={day === null ? `empty-${index}` : dateKey} className={`min-h-24 rounded-xl p-2 text-left ring-1 ${day === null ? "bg-emerald-900/[0.03] ring-transparent" : "bg-white ring-emerald-900/10"}`}>
@@ -1683,6 +1710,18 @@ export default function Home() {
                           {dayDeadlines.map((deadline) => (
                             <div key={deadline.id} className="rounded-md bg-[#28734e] px-1.5 py-1 text-[10px] font-semibold leading-tight text-white" title={deadline.title}>
                               {deadline.title}
+                            </div>
+                          ))}
+                          {dayChecklistTasks.map((task) => (
+                            <div
+                              key={task.id}
+                              className={`rounded-md px-1.5 py-1 text-[10px] font-semibold leading-tight text-white ${
+                                task.date < todayKey ? "bg-rose-600" : "bg-emerald-700"
+                              }`}
+                              title={`${task.schoolName}: ${task.title}`}
+                            >
+                              <span className="block truncate">{task.title}</span>
+                              <span className="block truncate font-normal text-white/80">{task.schoolName}</span>
                             </div>
                           ))}
                         </div>
