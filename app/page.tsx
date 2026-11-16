@@ -66,6 +66,40 @@ const resources: Resource[] = [
 const getDateKey = (year: number, month: number, day: number) =>
   `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
+const getRequirementDateKey = (date: string, currentYear: number): string | null => {
+  const isoDate = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (isoDate) {
+    const [, year, month, day] = isoDate;
+    const parsedDate = new Date(Number(year), Number(month) - 1, Number(day));
+
+    return parsedDate.getFullYear() === Number(year) &&
+      parsedDate.getMonth() === Number(month) - 1 &&
+      parsedDate.getDate() === Number(day)
+      ? getDateKey(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate())
+      : null;
+  }
+
+  const shortDate = /^([a-z]+)\s+(\d{1,2})$/i.exec(date.trim());
+  if (!shortDate) {
+    return null;
+  }
+
+  const monthIndex = [
+    "jan", "feb", "mar", "apr", "may", "jun",
+    "jul", "aug", "sep", "oct", "nov", "dec",
+  ].findIndex((month) => month === shortDate[1].slice(0, 3).toLowerCase());
+  const day = Number(shortDate[2]);
+
+  if (monthIndex < 0) {
+    return null;
+  }
+
+  const parsedDate = new Date(currentYear, monthIndex, day);
+  return parsedDate.getMonth() === monthIndex && parsedDate.getDate() === day
+    ? getDateKey(currentYear, monthIndex, day)
+    : null;
+};
+
 const defaultDeadlines: Deadline[] = [
   { id: 1, title: "Common App essay review", date: "2026-09-20" },
   { id: 2, title: "Scholarship application", date: "2026-09-24" },
@@ -174,6 +208,10 @@ export default function Home() {
   const [newAppDueDate, setNewAppDueDate] = useState("");
   const [taskDrafts, setTaskDrafts] = useState<TaskDraft[]>(() => [createTaskDraft()]);
   const [editingSchoolId, setEditingSchoolId] = useState<number | null>(null);
+  const [showNewRequirementForm, setShowNewRequirementForm] = useState(false);
+  const [newRequirementTitle, setNewRequirementTitle] = useState("");
+  const [newRequirementDate, setNewRequirementDate] = useState("");
+  const [newRequirementType, setNewRequirementType] = useState("");
   const [checklistSearch, setChecklistSearch] = useState("");
   const [addSchoolError, setAddSchoolError] = useState("");
   const [celebration, setCelebration] = useState<{ id: number; schoolName: string } | null>(null);
@@ -383,7 +421,7 @@ export default function Home() {
         id: 1,
         title: newAppType,
         category: "Application",
-        date: newAppDueDate ? formatDeadlineDate(newAppDueDate) : "",
+        date: newAppDueDate,
         doneLabel: "Submitted",
         openLabel: "Upcoming",
         done: false,
@@ -399,7 +437,7 @@ export default function Home() {
       id: requirements.length + 1,
       title: task.name.trim(),
       category: task.type || "Task",
-      date: task.date ? formatDeadlineDate(task.date) : "",
+      date: task.date,
       doneLabel: "Complete",
       openLabel: "Upcoming",
       done: false,
@@ -434,6 +472,56 @@ export default function Home() {
           : school,
       ),
     );
+  };
+
+  const handleAddRequirement = (schoolId: number) => {
+    const title = newRequirementTitle.trim();
+
+    if (!title) {
+      return;
+    }
+
+    updateChecklistSchools((current) =>
+      current.map((school) => {
+        if (school.id !== schoolId) {
+          return school;
+        }
+
+        const nextId = school.requirements.reduce(
+          (highestId, requirement) => Math.max(highestId, requirement.id),
+          0,
+        ) + 1;
+
+        return {
+          ...school,
+          requirements: [
+            ...school.requirements,
+            {
+              id: nextId,
+              title,
+              category: newRequirementType || "Task",
+              date: newRequirementDate,
+              doneLabel: "Complete",
+              openLabel: "Upcoming",
+              done: false,
+            },
+          ],
+        };
+      }),
+    );
+
+    setNewRequirementTitle("");
+    setNewRequirementDate("");
+    setNewRequirementType("");
+    setShowNewRequirementForm(false);
+  };
+
+  const closeSchoolEditor = () => {
+    setEditingSchoolId(null);
+    setShowNewRequirementForm(false);
+    setNewRequirementTitle("");
+    setNewRequirementDate("");
+    setNewRequirementType("");
   };
 
   useEffect(() => {
@@ -1123,7 +1211,7 @@ export default function Home() {
             </span>
 
             {editingSchoolId === school.id ? (
-              <button type="button" onClick={() => setEditingSchoolId(null)}
+              <button type="button" onClick={closeSchoolEditor}
                 className="rounded-lg bg-[#28734e] px-3 py-1 text-xs font-semibold text-white hover:bg-[#205b3e]">
                 Done
               </button>
@@ -1131,7 +1219,10 @@ export default function Home() {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setEditingSchoolId(school.id)}
+                  onClick={() => {
+                    setEditingSchoolId(school.id);
+                    setShowNewRequirementForm(false);
+                  }}
                   className="rounded-lg border border-emerald-900/20 bg-white px-3 py-1 text-xs font-semibold text-emerald-900 hover:bg-emerald-50"
                 >
                   Edit
@@ -1149,42 +1240,132 @@ export default function Home() {
         </div>
 
         {/* Requirement rows */}
-        {rows.map((r) => (
-          <label
-            key={r.id}
-            className="flex cursor-pointer items-center gap-4 border-b border-emerald-900/10 px-4 py-3 last:border-b-0 hover:bg-white/60"
-          >
-            <input
-              type="checkbox"
-              checked={r.done}
-              onChange={() => toggleRequirement(school.id, r.id)}
-              className="h-4 w-4 accent-[#28734e]"
-            />
-            <div className="flex-1">
-              <p className={`text-sm font-semibold ${r.done ? "text-slate-400" : "text-emerald-950"}`}>{r.title}</p>
-              <p className="text-xs text-slate-400">{r.category}</p>
-            </div>
-            <span className="text-xs text-slate-500">{r.date}</span>
-            <span
-              className={`w-24 rounded-full px-3 py-1 text-center text-xs font-semibold ${
-                r.done
-                  ? "bg-[#28734e] text-white"
-                  : r.openLabel === "Due today"
-                    ? "bg-rose-50 text-rose-600"
-                    : "bg-white text-slate-600"
-              }`}
-            >
-              {r.done ? "Complete" : r.openLabel}
-            </span>
+        {rows.map((r) => {
+          const requirementDateKey = getRequirementDateKey(r.date, today.getFullYear());
+          const isOverdue = !r.done && requirementDateKey !== null && requirementDateKey < todayKey;
+          const isDueToday = !r.done && requirementDateKey === todayKey;
 
-            {editingSchoolId === school.id && (
-            <button type="button" onClick={() => removeRequirement(school.id, r.id)}
-              className="rounded-lg border border-rose-200 bg-white px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50">
-              Remove
-            </button>
-          )}
-          </label>
-        ))}
+          return (
+              <label
+                key={r.id}
+                className="flex cursor-pointer items-center gap-4 border-b border-emerald-900/10 px-4 py-3 last:border-b-0 hover:bg-white/60"
+              >
+                <input
+                  type="checkbox"
+                  checked={r.done}
+                  onChange={() => toggleRequirement(school.id, r.id)}
+                  className="h-4 w-4 accent-[#28734e]"
+                />
+                <div className="flex-1">
+                  <p className={`text-sm font-semibold ${r.done ? "text-slate-400" : "text-emerald-950"}`}>{r.title}</p>
+                  <p className="text-xs text-slate-400">{r.category}</p>
+                </div>
+                <span className="text-xs text-slate-500">{formatDeadlineDate(r.date)}</span>
+                <span
+                  className={`w-24 rounded-full px-3 py-1 text-center text-xs font-semibold ${
+                    r.done
+                      ? "bg-[#28734e] text-white"
+                      : isOverdue
+                        ? "bg-rose-600 text-white"
+                        : isDueToday
+                          ? "bg-rose-50 text-rose-600"
+                          : "bg-white text-slate-600"
+                  }`}
+                >
+                  {r.done ? "Complete" : isOverdue ? "Overdue" : isDueToday ? "Due today" : r.openLabel}
+                </span>
+
+                {editingSchoolId === school.id && (
+                  <button type="button" onClick={() => removeRequirement(school.id, r.id)}
+                    className="rounded-lg border border-rose-200 bg-white px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50">
+                    Remove
+                  </button>
+                )}
+              </label>
+          );
+        })}
+        {editingSchoolId === school.id && (
+          <div className="border-b border-emerald-900/10 px-4 py-3">
+            {!showNewRequirementForm ? (
+              <button
+                type="button"
+                onClick={() => setShowNewRequirementForm(true)}
+                className="rounded-lg border border-emerald-900/20 bg-white px-3 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-50"
+              >
+                + Add task
+              </button>
+            ) : (
+              <form
+                className="space-y-3 rounded-xl border border-emerald-900/15 bg-white/70 p-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  handleAddRequirement(school.id);
+                }}
+              >
+                <h3 className="text-sm font-semibold text-emerald-950">Add a task for {school.name}</h3>
+                <label className="block text-xs font-semibold text-emerald-950">
+                  Task name
+                  <input
+                    type="text"
+                    value={newRequirementTitle}
+                    onChange={(event) => setNewRequirementTitle(event.target.value)}
+                    placeholder="e.g. Submit recommendation letter"
+                    required
+                    className="mt-1 w-full rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
+                  />
+                </label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block text-xs font-semibold text-emerald-950">
+                    Task type
+                    <select
+                      value={newRequirementType}
+                      onChange={(event) => setNewRequirementType(event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
+                    >
+                      <option value="">Select a task type</option>
+                      <option>Application</option>
+                      <option>Academic records</option>
+                      <option>Recommendations</option>
+                      <option>Writing supplement</option>
+                      <option>Financial aid</option>
+                      <option>Scholarship</option>
+                    </select>
+                  </label>
+                  <label className="block text-xs font-semibold text-emerald-950">
+                    Due date
+                    <input
+                      type="date"
+                      value={newRequirementDate}
+                      onChange={(event) => setNewRequirementDate(event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-emerald-900/15 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-[#c6a45c] focus:ring-2 focus:ring-[#f4e8c1]"
+                    />
+                  </label>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNewRequirementForm(false);
+                      setNewRequirementTitle("");
+                      setNewRequirementDate("");
+                      setNewRequirementType("");
+                    }}
+                    className="rounded-lg border border-emerald-900/20 bg-white px-3 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!newRequirementTitle.trim()}
+                    className="rounded-lg bg-[#28734e] px-3 py-2 text-sm font-semibold text-white hover:bg-[#205b3e] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Save task
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
       </div>
     );
   })}
